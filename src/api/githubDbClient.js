@@ -57,9 +57,25 @@ async function getStorage(entityName) {
       });
       
       shaCache[entityName] = githubData.sha;
-      const content = atob(githubData.content);
+      // Decode base64 content to UTF-8 safely (handles non-ASCII characters)
+      let decodedContent = null;
       try {
-        data = JSON.parse(content);
+        // Preferred: use TextDecoder on the binary data produced by atob
+        const binary = atob(githubData.content);
+        const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+        decodedContent = new TextDecoder().decode(bytes);
+      } catch (err) {
+        // Fallback: use decodeURIComponent/escape trick
+        try {
+          decodedContent = decodeURIComponent(Array.prototype.map.call(atob(githubData.content), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+        } catch (e) {
+          console.error(`Base64 -> UTF8 decode failed for ${entityName}:`, e);
+          decodedContent = null;
+        }
+      }
+
+      try {
+        data = decodedContent ? JSON.parse(decodedContent) : [];
         source = 'GitHub';
       } catch (e) {
         console.error(`JSON parse error for ${entityName} from GitHub:`, e);
@@ -112,8 +128,15 @@ async function setStorage(entityName, data, message) {
   
   if (octokit && GITHUB_OWNER && GITHUB_REPO) {
     try {
-      const content = btoa(jsonString);
-      
+      // Encode JSON string as base64 safely for UTF-8 characters
+      let content;
+      try {
+        content = btoa(unescape(encodeURIComponent(jsonString)));
+      } catch (err) {
+        // Fallback to plain btoa (may fail for some characters)
+        content = btoa(jsonString);
+      }
+
       const response = await octokit.rest.repos.createOrUpdateFileContents({
         owner: GITHUB_OWNER,
         repo: GITHUB_REPO,
@@ -337,3 +360,46 @@ export const githubDbClient = {
     User: createEntityClient('User'),
   }
 };
+
+// Upload a binary file (base64 content without data: prefix) to the repo
+async function uploadFile(path, base64Content, message) {
+  if (!octokit || !GITHUB_OWNER || !GITHUB_REPO) {
+    throw new Error('GitHub not configured');
+  }
+
+  try {
+    // Try to get existing file to populate shaCache for this path (optional)
+    try {
+      const existing = await octokit.rest.repos.getContent({
+        owner: GITHUB_OWNER,
+        repo: GITHUB_REPO,
+        path,
+        ref: GITHUB_BRANCH
+      });
+      shaCache[path] = existing.data.sha;
+    } catch (e) {
+      // Ignore 404 -- file doesn't exist yet
+    }
+
+    const response = await octokit.rest.repos.createOrUpdateFileContents({
+      owner: GITHUB_OWNER,
+      repo: GITHUB_REPO,
+      path,
+      message: message || `Add ${path}`,
+      content: base64Content,
+      sha: shaCache[path],
+      branch: GITHUB_BRANCH
+    });
+
+    shaCache[path] = response.data.content.sha;
+
+    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${path}`;
+    return { rawUrl };
+  } catch (error) {
+    console.error(`GitHub upload error for ${path}:`, error);
+    throw error;
+  }
+}
+
+// Attach upload helper to exported client for use by integrations
+githubDbClient.uploadFile = uploadFile;

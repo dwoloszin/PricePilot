@@ -53,16 +53,72 @@ export const base44 = {
   integrations: {
     Core: {
       UploadFile: async ({ file, compress = true }) => {
-        // In a real app, this would upload to S3 or similar.
-        // For GitHub Pages, we convert to base64 and store it.
-        
+        // If GitHub is configured, compress the image and store it in the repo.
+        // Otherwise fall back to returning a data URL (existing behavior).
+        if (!file) throw new Error('No file provided');
+
+        // Helper: convert Blob to base64 (no data: prefix)
+        const blobToBase64 = async (blob) => {
+          const arrayBuffer = await blob.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          let binary = '';
+          const chunkSize = 0x8000;
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            const chunk = bytes.subarray(i, i + chunkSize);
+            binary += String.fromCharCode.apply(null, chunk);
+          }
+          return btoa(binary);
+        };
+
+        // If githubDbClient.uploadFile is available, try to use it
+        if (githubDbClient && typeof githubDbClient.uploadFile === 'function') {
+          try {
+            // Create image element to compress/resize
+            const img = await new Promise((resolve, reject) => {
+              const url = URL.createObjectURL(file);
+              const image = new Image();
+              image.onload = () => { URL.revokeObjectURL(url); resolve(image); };
+              image.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+              image.src = url;
+            });
+
+            // Determine target size
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let { width, height } = img;
+            let scale = Math.min(1, MAX_WIDTH / width, MAX_HEIGHT / height);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(width * scale);
+            canvas.height = Math.round(height * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Prefer WebP for good compression, fallback to jpeg
+            const blob = await new Promise((res) => canvas.toBlob(res, 'image/webp', 0.65));
+            if (!blob) {
+              // fallback
+              const fallbackBlob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.75));
+              const base64 = await blobToBase64(fallbackBlob);
+              const filename = `images/${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`;
+              const { rawUrl } = await githubDbClient.uploadFile(filename, base64, `Add image ${filename}`);
+              return { file_url: rawUrl };
+            }
+
+            const base64 = await blobToBase64(blob);
+            const filename = `images/${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
+            const { rawUrl } = await githubDbClient.uploadFile(filename, base64, `Add image ${filename}`);
+            return { file_url: rawUrl };
+          } catch (err) {
+            console.warn('GitHub image upload failed, falling back to data URL:', err);
+            // Fall through to data URL fallback below
+          }
+        }
+
+        // Fallback: return data URL (original behaviour)
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.readAsDataURL(file);
-          reader.onload = () => {
-            // For this demo, we just return the base64 URL
-            resolve({ file_url: reader.result });
-          };
+          reader.onload = () => resolve({ file_url: reader.result });
           reader.onerror = error => reject(error);
         });
       }
