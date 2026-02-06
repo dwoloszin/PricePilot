@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LikeDislike } from '@/components/ui/like-dislike';
 import { StoreEditDialog } from '@/components/stores/StoreEditDialog';
+import { StoreAddDialog } from '@/components/stores/StoreAddDialog';
 import { useAuth } from '@/lib/AuthContext';
 import { 
   Search, 
@@ -35,6 +36,7 @@ export default function PriceComparison() {
   const [selectedStore, setSelectedStore] = useState('all');
   const [editingStore, setEditingStore] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -129,9 +131,18 @@ export default function PriceComparison() {
   return (
     <div className="px-4 py-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Price Comparison</h1>
-        <p className="text-slate-500 text-sm mt-1">Find the best deals across stores</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Price Comparison</h1>
+          <p className="text-slate-500 text-sm mt-1">Find the best deals across stores</p>
+        </div>
+        <Button 
+          onClick={() => setShowAddDialog(true)}
+          className="bg-emerald-500 hover:bg-emerald-600 rounded-xl"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Store
+        </Button>
       </div>
 
       <Tabs defaultValue="deals" className="w-full">
@@ -408,6 +419,16 @@ export default function PriceComparison() {
           }}
         />
       )}
+
+      <StoreAddDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        currentUserId={user?.id}
+        existingStores={stores}
+        onSave={() => {
+          queryClient.invalidateQueries(['stores']);
+        }}
+      />
     </div>
   );
 }

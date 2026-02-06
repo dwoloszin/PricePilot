@@ -11,7 +11,8 @@ import {
   Package, 
   TrendingDown, 
   Clock,
-  Info
+  Info,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { UserTag } from '@/components/ui/user-tag';
 import { LikeDislike } from '@/components/ui/like-dislike';
 import { StoreEditDialog } from '@/components/stores/StoreEditDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from '@/lib/AuthContext';
 import { format } from 'date-fns';
 
@@ -27,6 +38,8 @@ export default function StoreDetail() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const getStoreId = () => {
     const hash = window.location.hash;
@@ -62,6 +75,21 @@ export default function StoreDetail() {
   });
 
   const isLoading = storeLoading || pricesLoading;
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await base44.entities.Store.delete(storeId);
+      queryClient.invalidateQueries(['stores']);
+      navigate('/PriceComparison');
+    } catch (error) {
+      console.error('Failed to delete store:', error);
+      alert('Failed to delete store. Please try again.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -103,14 +131,24 @@ export default function StoreDetail() {
               {store.name}
             </h1>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setShowEditDialog(true)}
-            className="rounded-xl"
-          >
-            <Edit className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setShowEditDialog(true)}
+              className="rounded-xl"
+            >
+              <Edit className="w-5 h-5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setShowDeleteDialog(true)}
+              className="rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -254,6 +292,31 @@ export default function StoreDetail() {
           queryClient.invalidateQueries(['stores']);
         }}
       />
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the store <strong>{store.name}</strong>. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Store'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
