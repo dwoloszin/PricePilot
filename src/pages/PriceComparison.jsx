@@ -63,27 +63,43 @@ export default function PriceComparison() {
   const getStoreStats = () => {
     const stats = {};
     
-    // Process unique store names found in price entries
-    uniqueStores.forEach(storeName => {
-      const storePrices = priceEntries.filter(p => p.store_name === storeName);
+    // 1. First, initialize stats with all actual store entities
+    stores.forEach(store => {
+      const storePrices = priceEntries.filter(p => 
+        p.store_id === store.id || 
+        (p.store_name && p.store_name.toLowerCase() === store.name.toLowerCase())
+      );
       
-      // Try to find the actual store entity by name (case insensitive)
-      const storeData = stores.find(s => s.name.toLowerCase() === storeName.toLowerCase()) || { 
-        id: `temp-${storeName}`, 
-        name: storeName,
-        likes: [],
-        dislikes: []
-      };
-      
-      stats[storeName] = {
-        ...storeData,
+      stats[store.name.toLowerCase()] = {
+        ...store,
         productCount: new Set(storePrices.map(p => p.product_id)).size,
         avgPrice: storePrices.length > 0 
           ? storePrices.reduce((sum, p) => sum + p.price, 0) / storePrices.length 
           : 0,
         totalEntries: storePrices.length,
-        address: storeData.address || storePrices[0]?.store_address
+        address: store.address || storePrices[0]?.store_address
       };
+    });
+
+    // 2. Then, add "temp" stores from price entries that don't have a matching entity
+    uniqueStores.forEach(storeName => {
+      const lowerName = storeName.toLowerCase();
+      if (!stats[lowerName]) {
+        const storePrices = priceEntries.filter(p => p.store_name.toLowerCase() === lowerName);
+        
+        stats[lowerName] = {
+          id: `temp-${storeName}`, 
+          name: storeName,
+          likes: [],
+          dislikes: [],
+          productCount: new Set(storePrices.map(p => p.product_id)).size,
+          avgPrice: storePrices.length > 0 
+            ? storePrices.reduce((sum, p) => sum + p.price, 0) / storePrices.length 
+            : 0,
+          totalEntries: storePrices.length,
+          address: storePrices[0]?.store_address
+        };
+      }
     });
 
     return Object.values(stats).sort((a, b) => b.productCount - a.productCount);

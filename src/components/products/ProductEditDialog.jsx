@@ -3,6 +3,7 @@ import { Edit, Save, X, Package } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -134,6 +135,9 @@ export function ProductEditDialog({
             <Edit className="w-5 h-5 text-emerald-600" />
             Edit Product
           </DialogTitle>
+          <DialogDescription>
+            Update the information for this product.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">

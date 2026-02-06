@@ -4,6 +4,7 @@ import { Plus, Save, X, AlertTriangle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -142,6 +143,9 @@ export function StoreAddDialog({
             <Plus className="w-5 h-5 text-emerald-600" />
             Add New Store
           </DialogTitle>
+          <DialogDescription>
+            Enter the details of the new store to add it to the system.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
