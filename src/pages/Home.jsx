@@ -70,21 +70,23 @@ export default function Home() {
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
         
-        <div className="relative z-10">
-          <h1 className="text-2xl font-bold mb-2">Find the Best Prices</h1>
-          <p className="text-white/80 text-sm mb-6">
+        <div className="relative z-10 text-center">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Find the Best Prices</h1>
+          <p className="text-white/80 text-sm md:text-base mb-6">
             Scan products and compare prices across stores
           </p>
           
-          <Link to={createPageUrl('Scanner')}>
-            <Button 
-              size="lg"
-              className="bg-white text-emerald-600 hover:bg-white/90 rounded-2xl h-14 px-8 font-semibold shadow-lg"
-            >
-              <ScanLine className="w-5 h-5 mr-2" />
-              Scan Product
-            </Button>
-          </Link>
+          <div className="flex justify-center">
+            <Link to={createPageUrl('Scanner')}>
+              <Button 
+                size="lg"
+                className="bg-white text-emerald-600 hover:bg-white/90 rounded-2xl h-14 px-8 font-semibold shadow-lg"
+              >
+                <ScanLine className="w-5 h-5 mr-2" />
+                Scan Product
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -122,7 +124,7 @@ export default function Home() {
               <h2 className="font-semibold text-slate-800">Price Drops</h2>
             </div>
           </div>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {priceDropProducts.slice(0, 3).map(product => (
               <ProductCard 
                 key={product.id}
@@ -165,22 +167,21 @@ export default function Home() {
         </div>
 
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="bg-white rounded-2xl p-4 border border-slate-100">
-                <div className="flex gap-4">
-                  <Skeleton className="w-20 h-20 rounded-xl" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-4 w-1/3" />
-                  </div>
+              <div key={i} className="bg-white rounded-2xl overflow-hidden border border-slate-100">
+                <Skeleton className="w-full aspect-square rounded-t-2xl" />
+                <div className="p-4 space-y-2">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-10 w-full mt-4" />
                 </div>
               </div>
             ))}
           </div>
         ) : products.length > 0 ? (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {products.slice(0, 5).map(product => (
               <ProductCard 
                 key={product.id}
