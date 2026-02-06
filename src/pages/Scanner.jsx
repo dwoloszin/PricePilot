@@ -27,6 +27,19 @@ export default function Scanner() {
   const [existingProduct, setExistingProduct] = useState(null);
   const [fetchedProductData, setFetchedProductData] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [renderError, setRenderError] = useState(null);
+
+  // Safety timeout: If searching takes too long, force stop
+  useEffect(() => {
+    let timer;
+    if (isSearching) {
+      timer = setTimeout(() => {
+        console.warn("Search taking too long, forcing stop");
+        setIsSearching(false);
+      }, 10000); // 10s safety limit
+    }
+    return () => clearTimeout(timer);
+  }, [isSearching]);
 
   const { data: stores = [] } = useQuery({
     queryKey: ['stores'],
@@ -194,66 +207,92 @@ export default function Scanner() {
     return (
       <BarcodeScanner 
         onScan={handleBarcodeScan}
-        onClose={() => navigate(-1)}
+        onClose={() => navigate('/')}
       />
     );
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50 relative">
-      <div className="bg-white border-b border-slate-100 px-4 py-3 sticky top-0 z-[60]">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setScanning(true)} className="rounded-xl">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="font-semibold text-slate-800">{existingProduct ? 'Add Price' : 'New Product'}</h1>
-            <p className="text-xs text-slate-500">Barcode: {scannedBarcode}</p>
+  // Error Boundary Fallback
+  if (renderError) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+          <Package className="w-10 h-10 text-red-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">Something went wrong</h2>
+        <p className="text-slate-600 mb-8">We couldn't load the product form. Please try again.</p>
+        <Button onClick={() => window.location.reload()} className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 h-12 rounded-xl">
+          Reload App
+        </Button>
+      </div>
+    );
+  }
+
+  try {
+    return (
+      <div className="min-h-screen bg-slate-50 relative">
+        <div className="bg-white border-b border-slate-100 px-4 py-3 sticky top-0 z-[60]">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => setScanning(true)} className="rounded-xl">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="font-semibold text-slate-800">{existingProduct ? 'Add Price' : 'New Product'}</h1>
+              <p className="text-xs text-slate-500">Barcode: {scannedBarcode || '---'}</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="p-4 max-w-lg mx-auto pb-32">
-        {isSearching ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
-            <p className="text-slate-600 font-medium">Searching product...</p>
-            <p className="text-xs text-slate-400 mt-2">Checking database and online sources</p>
-          </div>
-        ) : existingProduct ? (
-          <div className="bg-white rounded-3xl p-5 border border-emerald-100 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-              </div>
-              <div>
-                <h2 className="font-bold text-slate-800">{existingProduct.name}</h2>
-                <p className="text-sm text-slate-500">{existingProduct.brand}</p>
-              </div>
+        <div className="p-4 max-w-lg mx-auto pb-32">
+          {isSearching ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
+              <p className="text-slate-600 font-medium">Searching product...</p>
+              <p className="text-xs text-slate-400 mt-2">Checking database and online sources</p>
             </div>
-            <PriceEntryForm 
-              onSubmit={createPriceEntryMutation.mutate}
-              isLoading={createPriceEntryMutation.isPending}
-              existingStores={stores}
-            />
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 flex items-start gap-3">
-              <Plus className="w-5 h-5 text-emerald-500" />
-              <p className="text-sm text-emerald-700 font-medium">New product! Be the first to share its price.</p>
+          ) : (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {existingProduct ? (
+                <div className="bg-white rounded-3xl p-5 border border-emerald-100 shadow-sm">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-slate-800">{existingProduct.name}</h2>
+                      <p className="text-sm text-slate-500">{existingProduct.brand}</p>
+                    </div>
+                  </div>
+                  <PriceEntryForm 
+                    onSubmit={createPriceEntryMutation.mutate}
+                    isLoading={createPriceEntryMutation.isPending}
+                    existingStores={stores}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 flex items-start gap-3">
+                    <Plus className="w-5 h-5 text-emerald-500" />
+                    <p className="text-sm text-emerald-700 font-medium">New product! Be the first to share its price.</p>
+                  </div>
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+                    <CommunityProductForm 
+                      barcode={scannedBarcode}
+                      initialData={fetchedProductData}
+                      onSubmit={createCommunityEntryMutation.mutate}
+                      isLoading={createCommunityEntryMutation.isPending}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
-              <CommunityProductForm 
-                barcode={scannedBarcode}
-                initialData={fetchedProductData}
-                onSubmit={createCommunityEntryMutation.mutate}
-                isLoading={createCommunityEntryMutation.isPending}
-              />
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  } catch (e) {
+    console.error("Render error in Scanner:", e);
+    setRenderError(e);
+    return null;
+  }
 }
