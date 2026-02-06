@@ -129,7 +129,7 @@ export function ProductEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-screen overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Edit className="w-5 h-5 text-emerald-600" />
@@ -140,7 +140,7 @@ export function ProductEditDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto flex-1 px-2">
           {/* Creator and Like/Dislike */}
           <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
             <UserTag
