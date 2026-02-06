@@ -116,40 +116,64 @@ export default function ShoppingLists() {
             </div>
           ))}
         </div>
-      ) : lists.length > 0 ? (
-        <div className="space-y-3">
-          {[...lists].sort((a, b) => (b.is_fast_list ? 1 : 0) - (a.is_fast_list ? 1 : 0)).map(list => (
-            <ShoppingListCard 
-              key={list.id}
-              list={list}
-              estimatedTotal={getEstimatedTotal(list)}
-              onClick={() => {
-                // Use hash-based navigation for GitHub Pages
-                if (list.is_fast_list) {
-                  window.location.hash = `#/FastList`;
-                } else {
-                  window.location.hash = `#/ShoppingListDetail?id=${list.id}`;
-                }
-              }}
-            />
-          ))}
-        </div>
       ) : (
-        <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-purple-100 flex items-center justify-center">
-            <ShoppingCart className="w-8 h-8 text-purple-400" />
-          </div>
-          <h3 className="font-semibold text-slate-800 mb-2">No Shopping Lists</h3>
-          <p className="text-slate-500 text-sm mb-4">
-            Create a list to start tracking your shopping and compare prices
-          </p>
-          <Button 
-            onClick={() => setShowCreate(true)}
-            className="bg-emerald-500 hover:bg-emerald-600"
+        <div className="space-y-3">
+          {/* Always show Fast List option at the top */}
+          <div 
+            className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-200 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => window.location.hash = `#/FastList`}
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Your First List
-          </Button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-800">Fast List</h3>
+                  <p className="text-xs text-slate-500">Quick add & scan items</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-400">→</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Regular shopping lists */}
+          {lists.length > 0 ? (
+            <div className="space-y-3">
+              {[...lists].filter(l => !l.is_fast_list).sort((a, b) => new Date(b.created_date) - new Date(a.created_date)).map(list => (
+                <ShoppingListCard 
+                  key={list.id}
+                  list={list}
+                  estimatedTotal={getEstimatedTotal(list)}
+                  onClick={() => {
+                    // Use hash-based navigation for GitHub Pages
+                    window.location.hash = `#/ShoppingListDetail?id=${list.id}`;
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-purple-100 flex items-center justify-center">
+                <ShoppingCart className="w-8 h-8 text-purple-400" />
+              </div>
+              <h3 className="font-semibold text-slate-800 mb-2">No Shopping Lists Yet</h3>
+              <p className="text-slate-500 text-sm mb-4">
+                Create a list to start tracking your shopping and comparing prices
+              </p>
+              <Button 
+                onClick={() => setShowCreate(true)}
+                className="bg-emerald-500 hover:bg-emerald-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Your First List
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

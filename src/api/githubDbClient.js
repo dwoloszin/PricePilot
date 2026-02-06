@@ -121,6 +121,7 @@ async function getStorage(entityName) {
 
 /**
  * Save data to GitHub or localStorage fallback
+ * Handles 409 (Conflict) by refreshing SHA and retrying
  */
 async function setStorage(entityName, data, message) {
   const validatedData = validateData(data, entityName);
@@ -153,10 +154,53 @@ async function setStorage(entityName, data, message) {
       // DEBUG: Log save
       console.log(`[DB] ${entityName}: Saved ${validatedData.length} items to GitHub`);
     } catch (error) {
-      console.error(`GitHub save error for ${entityName}:`, error);
-      // Always save to localStorage as fallback
-      localStorage.setItem(`pricepilot_db_data/${entityName}.json`, jsonString);
-      console.log(`[DB] ${entityName}: Saved ${validatedData.length} items to localStorage (GitHub failed)`);
+      // Handle 409 Conflict (stale SHA) by refreshing and retrying
+      if (error.status === 409) {
+        console.warn(`[DB] ${entityName}: SHA conflict detected, refreshing and retrying...`);
+        try {
+          // Fetch the current file to get fresh SHA
+          const currentFile = await octokit.rest.repos.getContent({
+            owner: GITHUB_OWNER,
+            repo: GITHUB_REPO,
+            path: `data/${entityName}.json`,
+            ref: GITHUB_BRANCH
+          });
+          
+          shaCache[entityName] = currentFile.data.sha;
+          
+          // Encode content again
+          let content;
+          try {
+            content = btoa(unescape(encodeURIComponent(jsonString)));
+          } catch (err) {
+            content = btoa(jsonString);
+          }
+          
+          // Retry with fresh SHA
+          const response = await octokit.rest.repos.createOrUpdateFileContents({
+            owner: GITHUB_OWNER,
+            repo: GITHUB_REPO,
+            path: `data/${entityName}.json`,
+            message: message || `Update ${entityName}`,
+            content,
+            sha: shaCache[entityName],
+            branch: GITHUB_BRANCH
+          });
+          
+          shaCache[entityName] = response.data.content.sha;
+          console.log(`[DB] ${entityName}: Retry successful, saved ${validatedData.length} items to GitHub`);
+        } catch (retryError) {
+          console.error(`GitHub save retry failed for ${entityName}:`, retryError);
+          // Fall back to localStorage
+          localStorage.setItem(`pricepilot_db_data/${entityName}.json`, jsonString);
+          console.log(`[DB] ${entityName}: Saved ${validatedData.length} items to localStorage (GitHub retry failed)`);
+        }
+      } else {
+        console.error(`GitHub save error for ${entityName}:`, error);
+        // Always save to localStorage as fallback
+        localStorage.setItem(`pricepilot_db_data/${entityName}.json`, jsonString);
+        console.log(`[DB] ${entityName}: Saved ${validatedData.length} items to localStorage (GitHub failed)`);
+      }
     }
   } else {
     // No GitHub configured, save only to localStorage
