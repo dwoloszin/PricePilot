@@ -21,17 +21,23 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import ShoppingListCard from '@/components/lists/ShoppingListCard';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function ShoppingLists() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [showCreate, setShowCreate] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListBudget, setNewListBudget] = useState('');
 
   const { data: lists = [], isLoading } = useQuery({
-    queryKey: ['shopping-lists'],
-    queryFn: () => base44.entities.ShoppingList.list('-created_date')
+    queryKey: ['shopping-lists', user?.id],
+    queryFn: async () => {
+      const allLists = await base44.entities.ShoppingList.list('-created_date');
+      return allLists.filter(l => String(l.user_id) === String(user?.id));
+    },
+    enabled: !!user?.id
   });
 
   const { data: priceEntries = [] } = useQuery({
@@ -71,6 +77,7 @@ export default function ShoppingLists() {
       name: newListName,
       budget: newListBudget ? parseFloat(newListBudget) : null,
       items: [],
+      user_id: user?.id,
       is_active: lists.length === 0
     });
   };

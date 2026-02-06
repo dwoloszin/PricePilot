@@ -17,6 +17,14 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkUserAuth();
+    
+    // Listen for storage changes to sync state
+    const handleStorageChange = () => {
+      checkUserAuth();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const checkUserAuth = async () => {

@@ -121,10 +121,10 @@ export default function Profile() {
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-bold text-slate-800">
-              {user?.full_name || 'Guest User'}
+              {user?.username ? `@${user.username}` : (user?.full_name || 'Guest User')}
             </h2>
-            {user?.username && (
-              <p className="text-emerald-600 text-sm font-medium">@{user.username}</p>
+            {user?.username && user?.full_name && (
+              <p className="text-slate-500 text-sm font-medium">{user.full_name}</p>
             )}
             <p className="text-slate-500 text-sm">{user?.email || 'Sign in to sync your data'}</p>
           </div>

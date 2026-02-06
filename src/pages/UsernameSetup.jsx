@@ -55,6 +55,9 @@ export default function UsernameSetup() {
       }
       localStorage.setItem('pricepilot_all_users', JSON.stringify(allUsers));
 
+      // Force AuthContext to reload from localStorage
+      window.dispatchEvent(new Event('storage'));
+
       toast.success('Username set successfully!');
       
       // Use navigate for relative routing (works on any host)
