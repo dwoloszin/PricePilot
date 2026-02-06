@@ -11,7 +11,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyC507icVjcQPUmmozoYqV5DR2c5NwHUYqs",
   authDomain: "pricepilot-d2d1b.firebaseapp.com",
   projectId: "pricepilot-d2d1b",
-  storageBucket: "pricepilot-d2d1b.firebasestorage.app",
+  storageBucket: "pricepilot-d2d1b.appspot.com",
   messagingSenderId: "1005347249880",
   appId: "1:1005347249880:web:77543c81d68799c2c201ad",
   measurementId: "G-1EVS774YWY"
