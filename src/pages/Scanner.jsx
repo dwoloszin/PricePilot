@@ -123,6 +123,7 @@ export default function Scanner() {
   });
 
   const handleBarcodeScan = async (barcode) => {
+    console.log(">>> SCANNER: handleBarcodeScan triggered with:", barcode);
     if (!barcode) {
       toast.error("Invalid barcode");
       setScanning(true);
@@ -140,7 +141,7 @@ export default function Scanner() {
     let apiData = null;
 
     try {
-      // 2. Check local DB FIRST (with timeout)
+      console.log(">>> SCANNER: Searching local database...");
       const dbPromise = base44.entities.Product.list();
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Database timeout')), 3000)
@@ -149,12 +150,14 @@ export default function Scanner() {
       try {
         const products = await Promise.race([dbPromise, timeoutPromise]);
         foundProduct = products.find(p => String(p.barcode) === String(barcode));
+        console.log(">>> SCANNER: Local search result:", foundProduct ? "FOUND" : "NOT FOUND");
       } catch (e) {
-        console.warn('Database search timed out or failed');
+        console.warn('>>> SCANNER: Database search timed out or failed');
       }
 
       // 3. External API SECOND if not found locally
       if (!foundProduct) {
+        console.log(">>> SCANNER: Searching external API...");
         const controller = new AbortController();
         const apiTimeoutId = setTimeout(() => controller.abort(), 4000);
 
@@ -168,6 +171,7 @@ export default function Scanner() {
             const data = await response.json();
             if (data.status === 1 && data.product) {
               const p = data.product;
+              console.log(">>> SCANNER: API found product:", p.product_name);
               apiData = {
                 name: p.product_name || '',
                 brand: p.brands || '',
@@ -178,16 +182,18 @@ export default function Scanner() {
             }
           }
         } catch (e) {
-          console.log('External API skipped or timed out');
+          console.log('>>> SCANNER: External API skipped or timed out');
         }
       }
     } catch (error) {
-      console.error('Scan process error:', error);
+      console.error('>>> SCANNER: Scan process error:', error);
     } finally {
-      // 4. FINAL STATE UPDATE - Do everything at once to ensure React re-renders correctly
+      console.log(">>> SCANNER: Finalizing search state...");
+      // 4. FINAL STATE UPDATE
       setExistingProduct(foundProduct);
       setFetchedProductData(apiData);
       setIsSearching(false);
+      console.log(">>> SCANNER: Search finished. isSearching set to false.");
     }
   };
 
@@ -227,71 +233,83 @@ export default function Scanner() {
     );
   }
 
-  try {
-    return (
-      <div className="min-h-screen bg-slate-50 relative">
-        <div className="bg-white border-b border-slate-100 px-4 py-3 sticky top-0 z-[60]">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setScanning(true)} className="rounded-xl">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="font-semibold text-slate-800">{existingProduct ? 'Add Price' : 'New Product'}</h1>
-              <p className="text-xs text-slate-500">Barcode: {scannedBarcode || '---'}</p>
-            </div>
+  // Simplified rendering logic to prevent white screen
+  console.log(">>> SCANNER: Rendering UI. State:", { scanning, isSearching, hasExisting: !!existingProduct, hasFetched: !!fetchedProductData });
+
+  return (
+    <div className="min-h-screen bg-slate-50 relative">
+      {/* Header always visible */}
+      <div className="bg-white border-b border-slate-100 px-4 py-3 sticky top-0 z-[60]">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => setScanning(true)} className="rounded-xl">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="font-semibold text-slate-800">
+              {isSearching ? 'Searching...' : (existingProduct ? 'Add Price' : 'New Product')}
+            </h1>
+            <p className="text-xs text-slate-500">Barcode: {scannedBarcode || '---'}</p>
           </div>
         </div>
+      </div>
 
-        <div className="p-4 max-w-lg mx-auto pb-32">
-          {isSearching ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
-              <p className="text-slate-600 font-medium">Searching product...</p>
-              <p className="text-xs text-slate-400 mt-2">Checking database and online sources</p>
-            </div>
-          ) : (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {existingProduct ? (
-                <div className="bg-white rounded-3xl p-5 border border-emerald-100 shadow-sm">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center">
-                      <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-                    </div>
-                    <div>
-                      <h2 className="font-bold text-slate-800">{existingProduct.name}</h2>
-                      <p className="text-sm text-slate-500">{existingProduct.brand}</p>
-                    </div>
+      <div className="p-4 max-w-lg mx-auto pb-32">
+        {isSearching && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
+            <p className="text-slate-600 font-medium">Searching product...</p>
+            <p className="text-xs text-slate-400 mt-2">Checking database and online sources</p>
+          </div>
+        )}
+
+        {!isSearching && scannedBarcode && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {existingProduct ? (
+              <div className="bg-white rounded-3xl p-5 border border-emerald-100 shadow-sm">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-500" />
                   </div>
-                  <PriceEntryForm 
-                    onSubmit={createPriceEntryMutation.mutate}
-                    isLoading={createPriceEntryMutation.isPending}
-                    existingStores={stores}
+                  <div>
+                    <h2 className="font-bold text-slate-800">{existingProduct.name}</h2>
+                    <p className="text-sm text-slate-500">{existingProduct.brand}</p>
+                  </div>
+                </div>
+                <PriceEntryForm 
+                  onSubmit={(data) => createPriceEntryMutation.mutate(data)}
+                  isLoading={createPriceEntryMutation.isPending}
+                  existingStores={stores || []}
+                />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 flex items-start gap-3">
+                  <Plus className="w-5 h-5 text-emerald-500" />
+                  <p className="text-sm text-emerald-700 font-medium">New product! Be the first to share its price.</p>
+                </div>
+                <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+                  <CommunityProductForm 
+                    barcode={scannedBarcode}
+                    initialData={fetchedProductData || {}}
+                    onSubmit={(data) => createCommunityEntryMutation.mutate(data)}
+                    isLoading={createCommunityEntryMutation.isPending}
                   />
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 flex items-start gap-3">
-                    <Plus className="w-5 h-5 text-emerald-500" />
-                    <p className="text-sm text-emerald-700 font-medium">New product! Be the first to share its price.</p>
-                  </div>
-                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
-                    <CommunityProductForm 
-                      barcode={scannedBarcode}
-                      initialData={fetchedProductData}
-                      onSubmit={createCommunityEntryMutation.mutate}
-                      isLoading={createCommunityEntryMutation.isPending}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!isSearching && !scannedBarcode && !scanning && (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Package className="w-12 h-12 text-slate-300 mb-4" />
+            <p className="text-slate-500">No barcode scanned yet.</p>
+            <Button onClick={() => setScanning(true)} className="mt-4 bg-emerald-500 text-white">
+              Open Scanner
+            </Button>
+          </div>
+        )}
       </div>
-    );
-  } catch (e) {
-    console.error("Render error in Scanner:", e);
-    setRenderError(e);
-    return null;
-  }
+    </div>
+  );
 }
