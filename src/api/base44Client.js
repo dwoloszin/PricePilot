@@ -152,6 +152,23 @@ export const base44 = (() => {
           return origUpdate(id, data, user);
         };
       }
+      // Wrap toggleLike/toggleDislike to pass current user object
+      if (typeof ent.toggleLike === 'function') {
+        const origToggleLike = ent.toggleLike.bind(ent);
+        ent.toggleLike = async (id, userArg = null) => {
+          const me = await base.auth.me();
+          const user = userArg || me;
+          return origToggleLike(id, user);
+        };
+      }
+      if (typeof ent.toggleDislike === 'function') {
+        const origToggleDislike = ent.toggleDislike.bind(ent);
+        ent.toggleDislike = async (id, userArg = null) => {
+          const me = await base.auth.me();
+          const user = userArg || me;
+          return origToggleDislike(id, user);
+        };
+      }
     });
   }
 

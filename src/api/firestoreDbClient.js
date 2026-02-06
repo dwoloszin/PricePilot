@@ -166,16 +166,28 @@ const createEntityClient = (entityName) => ({
 
   toggleLike: async (id, userId) => {
     try {
+      // userId may be a string id or an object { id, username, full_name }
+      const uid = userId && typeof userId === 'string' ? userId : (userId && userId.id) || null;
+      const uname = userId && typeof userId === 'object' ? (userId.username || userId.full_name || userId.name) : null;
       const ref = doc(db, entityName, id);
       const d = await getDoc(ref);
       if (!d.exists()) return null;
       const item = d.data();
       const likes = item.likes || [];
-      const dislikes = item.dislikes || [];
-      if (likes.includes(userId)) {
-        await updateDoc(ref, { likes: arrayRemove(userId) });
+      if (!uid) return null;
+
+      if (likes.includes(uid)) {
+        // remove id and name if present
+        const updates = { likes: arrayRemove(uid) };
+        if (uname) updates.likes_names = arrayRemove(uname);
+        await updateDoc(ref, updates);
       } else {
-        await updateDoc(ref, { likes: arrayUnion(userId), dislikes: arrayRemove(userId) });
+        const updates = { likes: arrayUnion(uid), dislikes: arrayRemove(uid) };
+        if (uname) {
+          updates.likes_names = arrayUnion(uname);
+          updates.dislikes_names = arrayRemove(uname);
+        }
+        await updateDoc(ref, updates);
       }
       const updated = await getDoc(ref);
       return { id: updated.id, ...updated.data() };
@@ -187,16 +199,26 @@ const createEntityClient = (entityName) => ({
 
   toggleDislike: async (id, userId) => {
     try {
+      const uid = userId && typeof userId === 'string' ? userId : (userId && userId.id) || null;
+      const uname = userId && typeof userId === 'object' ? (userId.username || userId.full_name || userId.name) : null;
       const ref = doc(db, entityName, id);
       const d = await getDoc(ref);
       if (!d.exists()) return null;
       const item = d.data();
       const dislikes = item.dislikes || [];
-      const likes = item.likes || [];
-      if (dislikes.includes(userId)) {
-        await updateDoc(ref, { dislikes: arrayRemove(userId) });
+      if (!uid) return null;
+
+      if (dislikes.includes(uid)) {
+        const updates = { dislikes: arrayRemove(uid) };
+        if (uname) updates.dislikes_names = arrayRemove(uname);
+        await updateDoc(ref, updates);
       } else {
-        await updateDoc(ref, { dislikes: arrayUnion(userId), likes: arrayRemove(userId) });
+        const updates = { dislikes: arrayUnion(uid), likes: arrayRemove(uid) };
+        if (uname) {
+          updates.dislikes_names = arrayUnion(uname);
+          updates.likes_names = arrayRemove(uname);
+        }
+        await updateDoc(ref, updates);
       }
       const updated = await getDoc(ref);
       return { id: updated.id, ...updated.data() };
