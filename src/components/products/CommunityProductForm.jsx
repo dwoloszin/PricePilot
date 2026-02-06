@@ -14,6 +14,8 @@ import {
   User,
   Plus,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,6 +51,25 @@ const storeTypes = [
   { value: 'online', label: 'Online' },
   { value: 'other', label: 'Other' },
 ];
+
+// Haversine formula to calculate distance between two points in km
+function getDistance(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
 
 export default function CommunityProductForm({ 
   barcode, 
@@ -89,6 +110,18 @@ export default function CommunityProductForm({
   const [location, setLocation] = useState(null);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [searchRange, setSearchRange] = useState(1); // Default 1km
+
+  const { data: existingStores = [] } = useQuery({
+    queryKey: ['stores'],
+    queryFn: () => base44.entities.Store.list().catch(() => [])
+  });
+
+  const filteredStores = existingStores.filter(store => {
+    if (!location || !store.latitude || !store.longitude) return true;
+    const distance = getDistance(location.latitude, location.longitude, store.latitude, store.longitude);
+    return distance <= searchRange;
+  });
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -318,6 +351,65 @@ export default function CommunityProductForm({
           <Store className="w-5 h-5 text-emerald-600" />
           Store Information
         </h3>
+
+        {existingStores.length > 0 && (
+          <div className="space-y-4">
+            {location && (
+              <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-slate-500 font-medium uppercase tracking-wider flex items-center gap-2">
+                    <Navigation className="w-3 h-3" />
+                    Search Range: {searchRange}km
+                  </Label>
+                  <span className="text-xs font-bold text-emerald-600">{filteredStores.length} stores found</span>
+                </div>
+                <Slider
+                  value={[searchRange]}
+                  min={0.5}
+                  max={20}
+                  step={0.5}
+                  onValueChange={(val) => setSearchRange(val[0])}
+                  className="py-2"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
+                {location ? 'Nearby Stores' : 'Recent Stores'}
+              </p>
+              <Select onValueChange={(value) => {
+                const store = existingStores.find(s => s.name === value);
+                if (store) {
+                  setFormData(prev => ({
+                    ...prev,
+                    store_name: store.name,
+                    store_address: store.address || '',
+                    store_type: store.type || 'supermarket'
+                  }));
+                }
+              }}>
+                <SelectTrigger className="bg-slate-50 border-slate-200 h-12 rounded-xl">
+                  <SelectValue placeholder={location ? "Select a nearby store..." : "Select a recent store..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredStores.length > 0 ? (
+                    Array.from(new Set(filteredStores.map(s => s.name)))
+                      .map((name, idx) => (
+                        <SelectItem key={idx} value={name}>
+                          {name}
+                        </SelectItem>
+                      ))
+                  ) : (
+                    <div className="p-4 text-center text-sm text-slate-500">
+                      No stores found in this range.
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label className="text-slate-700 font-medium">Store Name *</Label>

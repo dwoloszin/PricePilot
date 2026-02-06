@@ -1,11 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Minus, Plus, MapPin, Store, DollarSign, StickyNote, Loader2, CheckCircle2 } from 'lucide-react';
+import { Minus, Plus, MapPin, Store, DollarSign, StickyNote, Loader2, CheckCircle2, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+
+// Haversine formula to calculate distance between two points in km
+function getDistance(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
 
 const storeTypes = [
   { value: 'supermarket', label: 'Supermarket' },
@@ -26,6 +46,7 @@ export default function PriceEntryForm({ onSubmit, isLoading, existingStores = [
   const [notes, setNotes] = useState('');
   const [location, setLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [searchRange, setSearchRange] = useState(1); // Default 1km
 
   useEffect(() => {
     getLocation();
@@ -80,6 +101,12 @@ export default function PriceEntryForm({ onSubmit, isLoading, existingStores = [
   };
 
   const total = price ? (parseFloat(price) * quantity).toFixed(2) : '0.00';
+
+  const filteredStores = existingStores.filter(store => {
+    if (!location || !store.latitude || !store.longitude) return true;
+    const distance = getDistance(location.latitude, location.longitude, store.latitude, store.longitude);
+    return distance <= searchRange;
+  });
 
   return (
     <div className="flex flex-col">
@@ -145,29 +172,58 @@ export default function PriceEntryForm({ onSubmit, isLoading, existingStores = [
           </Label>
           
           {existingStores.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Recent Stores</p>
-              <Select onValueChange={(value) => {
-                const store = existingStores.find(s => s.name === value);
-                if (store) {
-                  setStoreName(store.name);
-                  setStoreAddress(store.address || '');
-                  setStoreType(store.store_type || 'supermarket');
-                }
-              }}>
-                <SelectTrigger className="bg-slate-50 border-slate-200 h-12 rounded-xl">
-                  <SelectValue placeholder="Select a recent store..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from(new Set(existingStores.map(s => s.name)))
-                    .map((name, idx) => (
-                      <SelectItem key={idx} value={name}>
-                        {name}
-                      </SelectItem>
-                    ))
+            <div className="space-y-4">
+              {location && (
+                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-slate-500 font-medium uppercase tracking-wider flex items-center gap-2">
+                      <Navigation className="w-3 h-3" />
+                      Search Range: {searchRange}km
+                    </Label>
+                    <span className="text-xs font-bold text-emerald-600">{filteredStores.length} stores found</span>
+                  </div>
+                  <Slider
+                    value={[searchRange]}
+                    min={0.5}
+                    max={20}
+                    step={0.5}
+                    onValueChange={(val) => setSearchRange(val[0])}
+                    className="py-2"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
+                  {location ? 'Nearby Stores' : 'Recent Stores'}
+                </p>
+                <Select onValueChange={(value) => {
+                  const store = existingStores.find(s => s.name === value);
+                  if (store) {
+                    setStoreName(store.name);
+                    setStoreAddress(store.address || '');
+                    setStoreType(store.store_type || 'supermarket');
                   }
-                </SelectContent>
-              </Select>
+                }}>
+                  <SelectTrigger className="bg-slate-50 border-slate-200 h-12 rounded-xl">
+                    <SelectValue placeholder={location ? "Select a nearby store..." : "Select a recent store..."} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredStores.length > 0 ? (
+                      Array.from(new Set(filteredStores.map(s => s.name)))
+                        .map((name, idx) => (
+                          <SelectItem key={idx} value={name}>
+                            {name}
+                          </SelectItem>
+                        ))
+                    ) : (
+                      <div className="p-4 text-center text-sm text-slate-500">
+                        No stores found in this range.
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
 
