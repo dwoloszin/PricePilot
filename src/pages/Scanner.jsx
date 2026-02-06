@@ -129,65 +129,64 @@ export default function Scanner() {
       return;
     }
 
-    // Reset states for new scan
+    // 1. Set initial states
     setScannedBarcode(barcode);
-    setExistingProduct(null);
-    setFetchedProductData(null);
     setScanning(false);
     setIsSearching(true);
+    setExistingProduct(null);
+    setFetchedProductData(null);
     
+    let foundProduct = null;
+    let apiData = null;
+
     try {
-      // 1. Check local DB FIRST (with timeout)
+      // 2. Check local DB FIRST (with timeout)
       const dbPromise = base44.entities.Product.list();
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Database timeout')), 3000)
       );
 
-      let products = [];
       try {
-        products = await Promise.race([dbPromise, timeoutPromise]);
+        const products = await Promise.race([dbPromise, timeoutPromise]);
+        foundProduct = products.find(p => String(p.barcode) === String(barcode));
       } catch (e) {
-        console.warn('Database search timed out or failed, proceeding to API');
+        console.warn('Database search timed out or failed');
       }
 
-      const localMatch = products.find(p => String(p.barcode) === String(barcode));
-      
-      if (localMatch) {
-        setExistingProduct(localMatch);
-        setIsSearching(false);
-        return;
-      }
+      // 3. External API SECOND if not found locally
+      if (!foundProduct) {
+        const controller = new AbortController();
+        const apiTimeoutId = setTimeout(() => controller.abort(), 4000);
 
-      // 2. External API SECOND (with Timeout)
-      const controller = new AbortController();
-      const apiTimeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
+        try {
+          const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, {
+            signal: controller.signal
+          });
+          clearTimeout(apiTimeoutId);
 
-      try {
-        const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, {
-          signal: controller.signal
-        });
-        clearTimeout(apiTimeoutId);
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.status === 1 && data.product) {
-            const p = data.product;
-            setFetchedProductData({
-              name: p.product_name || '',
-              brand: p.brands || '',
-              category: mapCategory(p.categories_tags?.[0]),
-              image_url: p.image_url || '',
-              barcode: barcode
-            });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.status === 1 && data.product) {
+              const p = data.product;
+              apiData = {
+                name: p.product_name || '',
+                brand: p.brands || '',
+                category: mapCategory(p.categories_tags?.[0]),
+                image_url: p.image_url || '',
+                barcode: barcode
+              };
+            }
           }
+        } catch (e) {
+          console.log('External API skipped or timed out');
         }
-      } catch (e) {
-        console.log('External API skipped or timed out');
       }
-
-      setIsSearching(false);
     } catch (error) {
       console.error('Scan process error:', error);
+    } finally {
+      // 4. FINAL STATE UPDATE - Do everything at once to ensure React re-renders correctly
+      setExistingProduct(foundProduct);
+      setFetchedProductData(apiData);
       setIsSearching(false);
     }
   };
