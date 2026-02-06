@@ -379,8 +379,8 @@ export default function CommunityProductForm({
               <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
                 {location ? 'Nearby Stores' : 'Recent Stores'}
               </p>
-              <Select onValueChange={(value) => {
-                const store = existingStores.find(s => s.name === value);
+              <Select onValueChange={(storeId) => {
+                const store = filteredStores.find(s => s.id === storeId);
                 if (store) {
                   setFormData(prev => ({
                     ...prev,
@@ -395,12 +395,12 @@ export default function CommunityProductForm({
                 </SelectTrigger>
                 <SelectContent>
                   {filteredStores.length > 0 ? (
-                    Array.from(new Set(filteredStores.map(s => s.name)))
-                      .map((name, idx) => (
-                        <SelectItem key={idx} value={name}>
-                          {name}
-                        </SelectItem>
-                      ))
+                    filteredStores.map((store) => (
+                      <SelectItem key={store.id} value={store.id}>
+                        {store.name}
+                        {store.address && ` • ${store.address}`}
+                      </SelectItem>
+                    ))
                   ) : (
                     <div className="p-4 text-center text-sm text-slate-500">
                       No stores found in this range.

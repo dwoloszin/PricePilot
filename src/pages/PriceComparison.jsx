@@ -63,14 +63,14 @@ export default function PriceComparison() {
   const getStoreStats = () => {
     const stats = {};
     
-    // 1. First, initialize stats with all actual store entities
+    // 1. First, initialize stats with all actual store entities (keyed by ID to allow duplicates by name)
     stores.forEach(store => {
       const storePrices = priceEntries.filter(p => 
         p.store_id === store.id || 
         (p.store_name && p.store_name.trim().toLowerCase() === store.name.trim().toLowerCase())
       );
       
-      stats[store.name.toLowerCase()] = {
+      stats[store.id] = {
         ...store,
         productCount: new Set(storePrices.map(p => p.product_id)).size,
         avgPrice: storePrices.length > 0 
@@ -84,11 +84,17 @@ export default function PriceComparison() {
     // 2. Then, add "temp" stores from price entries that don't have a matching entity
     uniqueStores.forEach(storeName => {
       const lowerName = storeName.trim().toLowerCase();
-      if (!stats[lowerName]) {
+      // Check if any store entity matches this name
+      const hasMatchingEntity = Object.values(stats).some(s => 
+        s.name.trim().toLowerCase() === lowerName
+      );
+      
+      if (!hasMatchingEntity) {
         const storePrices = priceEntries.filter(p => p.store_name.trim().toLowerCase() === lowerName);
         
-        stats[lowerName] = {
-          id: `temp-${storeName}`, 
+        const tempKey = `temp-${storeName}`;
+        stats[tempKey] = {
+          id: tempKey, 
           name: storeName,
           likes: [],
           dislikes: [],
