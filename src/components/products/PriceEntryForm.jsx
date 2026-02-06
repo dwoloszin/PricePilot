@@ -104,8 +104,8 @@ export default function PriceEntryForm({ onSubmit, isLoading, existingStores = [
   });
 
   return (
-    <div className="flex flex-col">
-      <form id="price-entry-form" onSubmit={handleSubmit} className="space-y-6 pb-24">
+    <div className="flex flex-col h-screen overflow-hidden">
+      <form id="price-entry-form" onSubmit={handleSubmit} className="space-y-6 pb-24 overflow-y-auto px-4 py-6 flex-1">
         {/* Price Input */}
         <div className="space-y-2">
           <Label className="text-slate-700 font-semibold flex items-center gap-2">
