@@ -22,9 +22,39 @@ const app = initializeApp(firebaseConfig);
 let analytics;
 try { analytics = getAnalytics(app); } catch (e) { /* analytics not available in some environments */ }
 
-const db = getFirestore(app);
-const auth = getAuth(app);
-const storage = getStorage(app);
+// Initialize services with runtime validation and helpful diagnostics
+let db = null;
+let auth = null;
+let storage = null;
+
+try {
+  db = getFirestore(app);
+  auth = getAuth(app);
+  storage = getStorage(app);
+} catch (e) {
+  console.error('[Firebase] Initialization error:', e);
+  console.error('[Firebase] Please verify your web config in src/api/firebaseClient.js matches the Firebase project and that Firestore is enabled.');
+}
+
+function checkFirestoreSetup() {
+  console.log('Firebase config:', {
+    apiKey: firebaseConfig.apiKey ? 'SET' : 'MISSING',
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain,
+    storageBucket: firebaseConfig.storageBucket
+  });
+  if (!firebaseConfig.projectId) {
+    console.warn('[Firebase] projectId is missing');
+  }
+  if (!db) {
+    console.warn('[Firebase] Firestore not initialized. Open Firebase Console → Build → Firestore and enable a database for project:', firebaseConfig.projectId);
+  } else {
+    console.log('[Firebase] Firestore appears initialized for project', firebaseConfig.projectId);
+  }
+}
+
+// Expose a helper for runtime diagnostics
+window.__pricePilotFirebaseCheck = checkFirestoreSetup;
 
 export { app, analytics, db, auth, storage, serverTimestamp };
 
