@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { Package, Tag, MapPin, TrendingDown, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { LikeDislike } from '@/components/ui/like-dislike';

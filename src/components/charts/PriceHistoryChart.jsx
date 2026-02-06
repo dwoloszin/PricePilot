@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react';

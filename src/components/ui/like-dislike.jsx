@@ -1,5 +1,5 @@
 
-import React from 'react';
+import { useState } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

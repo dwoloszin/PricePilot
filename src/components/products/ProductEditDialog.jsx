@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Edit, Save, X, Package } from 'lucide-react';
 import {
   Dialog,

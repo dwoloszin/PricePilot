@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Edit, Save, X, Store } from 'lucide-react';
 import {
   Dialog,

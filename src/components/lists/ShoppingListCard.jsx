@@ -1,4 +1,3 @@
-import React from 'react';
 import { ShoppingCart, Package, ChevronRight, DollarSign, Target, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
