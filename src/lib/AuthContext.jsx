@@ -2,6 +2,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { clearSharedDataCache } from './query-client.js';
+import { auth } from '../api/firebaseClient';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 
 const AuthContext = createContext(null);
 
@@ -76,6 +78,15 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setIsAuthenticated(true);
       localStorage.setItem('pricepilot_user', JSON.stringify(userData));
+      // Also sign the user into Firebase Auth so Firestore rules that require
+      // authenticated requests will succeed. We use the same Google ID token
+      // returned by the Google One Tap / sign-in flow.
+      try {
+        const firebaseCred = GoogleAuthProvider.credential(credentialResponse.credential);
+        await signInWithCredential(auth, firebaseCred);
+      } catch (fbErr) {
+        console.warn('Firebase sign-in failed:', fbErr);
+      }
       setIsLoadingAuth(false);
       
       // Clear database cache to get fresh data from previous login
