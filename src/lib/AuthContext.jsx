@@ -12,8 +12,7 @@ import { setDoc, doc } from 'firebase/firestore';
 
 const AuthContext = createContext(null);
 
-// Your Google Client ID
-const GOOGLE_CLIENT_ID = "1005347249880-tvkjo9o2vhu49sc8ari3oj24krfh4oio.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
