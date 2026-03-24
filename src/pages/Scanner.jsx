@@ -16,6 +16,7 @@ import BarcodeScanner from '@/components/scanner/BarcodeScanner';
 import CommunityProductForm from '@/components/products/CommunityProductForm';
 import PriceEntryForm from '@/components/products/PriceEntryForm';
 import { useAuth } from '@/lib/AuthContext';
+import LoginPrompt from '@/components/ui/LoginPrompt';
 
 export default function Scanner() {
   const navigate = useNavigate();
@@ -262,7 +263,11 @@ export default function Scanner() {
           </div>
         )}
 
-        {!isSearching && scannedBarcode && (
+        {!isSearching && scannedBarcode && !user && (
+          <LoginPrompt message="Sign in to add or update prices for this product." />
+        )}
+
+        {!isSearching && scannedBarcode && user && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {existingProduct ? (
               <div className="bg-white rounded-3xl p-5 border border-emerald-100 shadow-sm">

@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import ShoppingListCard from '@/components/lists/ShoppingListCard';
 import { useAuth } from '@/lib/AuthContext';
+import LoginPrompt from '@/components/ui/LoginPrompt';
 
 export default function ShoppingLists() {
   const navigate = useNavigate();
@@ -86,6 +87,15 @@ export default function ShoppingLists() {
       is_active: lists.length === 0
     });
   };
+
+  if (!user) {
+    return (
+      <div className="px-4 py-6">
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">Shopping Lists</h1>
+        <LoginPrompt message="Sign in to create and manage your shopping lists." />
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 py-6 space-y-6">

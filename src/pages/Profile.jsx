@@ -28,6 +28,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { format } from 'date-fns';
+import LoginPrompt from '@/components/ui/LoginPrompt';
 
 export default function Profile() {
   const queryClient = useQueryClient();
@@ -103,6 +104,15 @@ export default function Profile() {
       <div className="px-4 py-6 space-y-6">
         <Skeleton className="h-32 rounded-2xl" />
         <Skeleton className="h-48 rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="px-4 py-6">
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">Profile</h1>
+        <LoginPrompt message="Sign in to view your profile, track your savings, and manage your shopping history." />
       </div>
     );
   }

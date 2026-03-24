@@ -28,6 +28,7 @@ import {
 import BarcodeScanner from '@/components/scanner/BarcodeScanner';
 import { useAuth } from '@/lib/AuthContext';
 import { cn } from '@/lib/utils';
+import LoginPrompt from '@/components/ui/LoginPrompt';
 
 export default function FastList() {
   const navigate = useNavigate();
@@ -211,6 +212,15 @@ export default function FastList() {
   };
 
   const cumulativeValue = fastList?.items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+
+  if (!user) {
+    return (
+      <div className="px-4 py-6">
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">Fast List</h1>
+        <LoginPrompt message="Sign in to use the Fast List and quickly track what you spend while shopping." />
+      </div>
+    );
+  }
 
   if (listsLoading || !fastList) {
     return (
