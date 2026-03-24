@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 import React, { createContext, useState, useContext } from 'react';
 import en from '../locales/en';
 import pt from '../locales/pt';

@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';

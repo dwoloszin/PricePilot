@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 // Simplified app params for GitHub migration
 export const appParams = {
   appId: import.meta.env.VITE_APP_ID || 'price-pilot',

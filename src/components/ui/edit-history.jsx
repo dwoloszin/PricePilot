@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 import React from 'react';
 import { History, User, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

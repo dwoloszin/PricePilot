@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 import { clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 

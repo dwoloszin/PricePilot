@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 import PriceComparison from './pages/PriceComparison';
 import ProductDetail from './pages/ProductDetail';
 import Products from './pages/Products';

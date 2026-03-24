@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 // Firebase client initialization
 // Run `npm install firebase` before using
 import { initializeApp } from 'firebase/app';

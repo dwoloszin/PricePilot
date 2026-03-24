@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 import React from 'react';
 import { useLanguage } from '@/lib/LanguageContext';
 import { cn } from '@/lib/utils';

@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 
 import { githubDbClient } from './githubDbClient';
 import { firestoreDbClient } from './firestoreDbClient';

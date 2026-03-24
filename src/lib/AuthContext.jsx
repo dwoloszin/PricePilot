@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';

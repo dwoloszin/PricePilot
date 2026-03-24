@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, X, Check, Loader2, RefreshCw } from 'lucide-react';

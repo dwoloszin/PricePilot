@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 // Preconfiguration for storage/backends and migration helpers
 // Edit these values to point the app to another GitHub repo or Firebase project.
 export default {

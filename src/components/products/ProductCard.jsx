@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 
 import React from 'react';
 import { Package, Tag, MapPin, TrendingDown, TrendingUp } from 'lucide-react';

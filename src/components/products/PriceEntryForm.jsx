@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
 import { Minus, Plus, MapPin, Store, DollarSign, StickyNote, Loader2, CheckCircle2, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';

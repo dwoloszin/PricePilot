@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 import React, { useEffect, useState } from 'react';
 import { User, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';

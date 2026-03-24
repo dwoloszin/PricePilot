@@ -1,3 +1,7 @@
+// ──────────────────────────────────────────────────────────
+// Bem na Mosca — DARIO WOLOSZIN
+// https://github.com/dwoloszin
+// ──────────────────────────────────────────────────────────
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, X, Keyboard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
