@@ -113,36 +113,41 @@ export function CameraCapture({
   return (
     <>
       <div className={cn('flex gap-2', className)}>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={startCamera}
-          disabled={isUploading}
-          className="flex-1 h-12 rounded-xl border-slate-200"
-        >
-          {isUploading ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Camera className="w-4 h-4 mr-2" />
-          )}
-          Take Photo
-        </Button>
-        
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-          className="flex-1 h-12 rounded-xl border-slate-200"
-        >
-          {isUploading ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Upload className="w-4 h-4 mr-2" />
-          )}
-          Upload Photo
-        </Button>
-        
+        {/* Take Photo and Upload Photo buttons hidden until full integration is ready */}
+        {false && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={startCamera}
+              disabled={isUploading}
+              className="flex-1 h-12 rounded-xl border-slate-200"
+            >
+              {isUploading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Camera className="w-4 h-4 mr-2" />
+              )}
+              Take Photo
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="flex-1 h-12 rounded-xl border-slate-200"
+            >
+              {isUploading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="w-4 h-4 mr-2" />
+              )}
+              Upload Photo
+            </Button>
+          </>
+        )}
+
         <input
           ref={fileInputRef}
           type="file"

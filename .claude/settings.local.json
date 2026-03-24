@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find c:UsersdwoloDocumentsDARIOPYTHONPricePilot -type f \\\\\\(-name *.html -o -name *.jsx -o -name *.tsx -o -name *.js -o -name *.vue -o -name *.xml \\\\\\))"
+    ]
+  }
+}
