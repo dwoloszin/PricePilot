@@ -7,7 +7,13 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { clearSharedDataCache } from './query-client.js';
 import { auth, db, serverTimestamp } from '../api/firebaseClient';
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import {
+  GoogleAuthProvider,
+  signInWithCredential,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+} from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 
 const AuthContext = createContext(null);
@@ -23,13 +29,19 @@ export const AuthProvider = ({ children }) => {
   const [appPublicSettings, setAppPublicSettings] = useState({ id: 'github-app', public_settings: {} });
 
   useEffect(() => {
+    // If URL is a magic link and email is stored, auto-complete sign-in
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      const storedEmail = localStorage.getItem('emailForSignIn');
+      if (storedEmail) {
+        loginWithEmailLink(storedEmail, window.location.href);
+        return;
+      }
+      // No email stored (different device) — Login page will handle it
+    }
+
     checkUserAuth();
-    
-    // Listen for storage changes to sync state
-    const handleStorageChange = () => {
-      checkUserAuth();
-    };
-    
+
+    const handleStorageChange = () => { checkUserAuth(); };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
@@ -57,73 +69,133 @@ export const AuthProvider = ({ children }) => {
   const loginWithGoogle = async (credentialResponse) => {
     try {
       setIsLoadingAuth(true);
-      
+
+      // Decode Google JWT to get profile info
       const base64Url = credentialResponse.credential.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-
+      const jsonPayload = decodeURIComponent(
+        atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+      );
       const googleUser = JSON.parse(jsonPayload);
-      
-      // Check if this user already has a username in our "all users" list
+
       const allUsers = JSON.parse(localStorage.getItem('pricepilot_all_users') || '[]');
-      const existingUserRecord = allUsers.find(u => u.id === googleUser.sub);
-      
+
+      // ── Firebase sign-in (with account-linking fallback) ────────────
+      let firebaseUid = googleUser.sub; // fallback if Firebase fails
+      let isLinked    = false;
+
+      try {
+        const firebaseCred = GoogleAuthProvider.credential(credentialResponse.credential);
+        const fbResult     = await signInWithCredential(auth, firebaseCred);
+        firebaseUid = fbResult.user.uid;
+      } catch (fbErr) {
+        if (fbErr.code === 'auth/account-exists-with-different-credential') {
+          // Email already registered via email link — find that account
+          const existingByEmail = allUsers.find(u => u.email === googleUser.email);
+          if (existingByEmail) {
+            firebaseUid = existingByEmail.id;
+            isLinked    = true;
+          }
+        } else {
+          console.warn('Firebase sign-in failed:', fbErr);
+        }
+      }
+
+      // Resolve existing record by UID or by email (linked case)
+      const existingRecord =
+        allUsers.find(u => u.id === firebaseUid) ||
+        (isLinked ? allUsers.find(u => u.email === googleUser.email) : null);
+
       const userData = {
-        id: googleUser.sub,
+        id:        firebaseUid,
         full_name: googleUser.name,
-        email: googleUser.email,
-        picture: googleUser.picture,
-        provider: 'google',
-        username: existingUserRecord ? existingUserRecord.username : null
+        email:     googleUser.email,
+        picture:   googleUser.picture,
+        provider:  isLinked ? 'email+google' : 'google',
+        username:  existingRecord?.username || null,
       };
 
       setUser(userData);
       setIsAuthenticated(true);
       localStorage.setItem('pricepilot_user', JSON.stringify(userData));
-      // Also sign the user into Firebase Auth so Firestore rules that require
-      // authenticated requests will succeed. We use the same Google ID token
-      // returned by the Google One Tap / sign-in flow.
+
+      // Upsert Firestore record (merge keeps existing fields like likes/dislikes)
       try {
-        const firebaseCred = GoogleAuthProvider.credential(credentialResponse.credential);
-        await signInWithCredential(auth, firebaseCred);
-        
-        // Create or update User record in Firestore so user profiles are accessible
-        try {
-          const userDocRef = doc(db, 'User', googleUser.sub);
-          const userPayload = {
-            id: googleUser.sub,
-            full_name: googleUser.name,
-            email: googleUser.email,
-            picture: googleUser.picture,
-            provider: 'google',
-            username: existingUserRecord ? existingUserRecord.username : null,
-            created_date: new Date().toISOString(),
-            likes: [],
-            dislikes: [],
-            likes_names: [],
-            dislikes_names: [],
-          };
-          await setDoc(userDocRef, userPayload, { merge: true });
-        } catch (fsErr) {
-          console.warn('Failed to create/update User in Firestore:', fsErr);
-        }
-      } catch (fbErr) {
-        console.warn('Firebase sign-in failed:', fbErr);
+        await setDoc(doc(db, 'User', firebaseUid), {
+          ...userData,
+          created_date: new Date().toISOString(),
+          likes: [], dislikes: [], likes_names: [], dislikes_names: [],
+        }, { merge: true });
+      } catch (fsErr) {
+        console.warn('Failed to update User in Firestore:', fsErr);
       }
+
       setIsLoadingAuth(false);
-      
-      // Clear database cache to get fresh data from previous login
       clearDatabaseCache();
-      
-      // Clear React Query cache to force fresh queries
       clearSharedDataCache();
-      
+
       return userData;
     } catch (error) {
       console.error('Google login failed:', error);
       setAuthError({ type: 'auth_failed', message: 'Google login failed' });
+      setIsLoadingAuth(false);
+      throw error;
+    }
+  };
+
+  const sendMagicLink = async (email) => {
+    const actionCodeSettings = {
+      url: window.location.origin + window.location.pathname,
+      handleCodeInApp: true,
+    };
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    localStorage.setItem('emailForSignIn', email);
+  };
+
+  const loginWithEmailLink = async (email, emailLink) => {
+    try {
+      setIsLoadingAuth(true);
+      const result = await signInWithEmailLink(auth, email, emailLink);
+      const firebaseUser = result.user;
+
+      const allUsers = JSON.parse(localStorage.getItem('pricepilot_all_users') || '[]');
+      const existingUserRecord = allUsers.find(u => u.id === firebaseUser.uid);
+
+      const userData = {
+        id: firebaseUser.uid,
+        full_name: firebaseUser.displayName || email.split('@')[0],
+        email: firebaseUser.email,
+        picture: firebaseUser.photoURL || null,
+        provider: 'email',
+        username: existingUserRecord ? existingUserRecord.username : null,
+      };
+
+      setUser(userData);
+      setIsAuthenticated(true);
+      localStorage.setItem('pricepilot_user', JSON.stringify(userData));
+      localStorage.removeItem('emailForSignIn');
+
+      try {
+        const userDocRef = doc(db, 'User', firebaseUser.uid);
+        await setDoc(userDocRef, {
+          ...userData,
+          created_date: new Date().toISOString(),
+          likes: [], dislikes: [], likes_names: [], dislikes_names: [],
+        }, { merge: true });
+      } catch (fsErr) {
+        console.warn('Failed to create/update User in Firestore:', fsErr);
+      }
+
+      clearDatabaseCache();
+      clearSharedDataCache();
+      setIsLoadingAuth(false);
+
+      // Clean magic link params from URL
+      window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+
+      return userData;
+    } catch (error) {
+      console.error('Email link sign-in failed:', error);
       setIsLoadingAuth(false);
       throw error;
     }
@@ -174,6 +246,8 @@ export const AuthProvider = ({ children }) => {
         appPublicSettings,
         logout,
         loginWithGoogle,
+        sendMagicLink,
+        loginWithEmailLink,
         navigateToLogin,
         checkAppState: checkUserAuth
       }}>
