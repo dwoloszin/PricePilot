@@ -17,11 +17,13 @@ import CommunityProductForm from '@/components/products/CommunityProductForm';
 import PriceEntryForm from '@/components/products/PriceEntryForm';
 import { useAuth } from '@/lib/AuthContext';
 import LoginPrompt from '@/components/ui/LoginPrompt';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function Scanner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { t } = useLanguage();
   
   const [scanning, setScanning] = useState(true);
   const [scannedBarcode, setScannedBarcode] = useState(null);
@@ -225,10 +227,10 @@ export default function Scanner() {
         <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
           <Package className="w-10 h-10 text-red-500" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">Something went wrong</h2>
-        <p className="text-slate-600 mb-8">We couldn't load the product form. Please try again.</p>
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">{t('scanner.somethingWrong')}</h2>
+        <p className="text-slate-600 mb-8">{t('scanner.somethingWrongDesc')}</p>
         <Button onClick={() => window.location.reload()} className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 h-12 rounded-xl">
-          Reload App
+          {t('scanner.reload')}
         </Button>
       </div>
     );
@@ -247,9 +249,9 @@ export default function Scanner() {
           </Button>
           <div>
             <h1 className="font-semibold text-slate-800">
-              {isSearching ? 'Searching...' : (existingProduct ? 'Add Price' : 'New Product')}
+              {isSearching ? t('scanner.searching') : (existingProduct ? t('scanner.addPrice') : t('scanner.newProduct'))}
             </h1>
-            <p className="text-xs text-slate-500">Barcode: {scannedBarcode || '---'}</p>
+            <p className="text-xs text-slate-500">{t('scanner.barcode')} {scannedBarcode || '---'}</p>
           </div>
         </div>
       </div>
@@ -258,13 +260,13 @@ export default function Scanner() {
         {isSearching && (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
-            <p className="text-slate-600 font-medium">Searching product...</p>
-            <p className="text-xs text-slate-400 mt-2">Checking database and online sources</p>
+            <p className="text-slate-600 font-medium">{t('scanner.searchingProduct')}</p>
+            <p className="text-xs text-slate-400 mt-2">{t('scanner.searchingDesc')}</p>
           </div>
         )}
 
         {!isSearching && scannedBarcode && !user && (
-          <LoginPrompt message="Sign in to add or update prices for this product." />
+          <LoginPrompt message={t('scanner.loginPrompt')} />
         )}
 
         {!isSearching && scannedBarcode && user && (
@@ -290,7 +292,7 @@ export default function Scanner() {
               <div className="space-y-6">
                 <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 flex items-start gap-3">
                   <Plus className="w-5 h-5 text-emerald-500" />
-                  <p className="text-sm text-emerald-700 font-medium">New product! Be the first to share its price.</p>
+                  <p className="text-sm text-emerald-700 font-medium">{t('scanner.newProductMsg')}</p>
                 </div>
                 <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
                   <CommunityProductForm 
@@ -308,9 +310,9 @@ export default function Scanner() {
         {!isSearching && !scannedBarcode && !scanning && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <Package className="w-12 h-12 text-slate-300 mb-4" />
-            <p className="text-slate-500">No barcode scanned yet.</p>
+            <p className="text-slate-500">{t('scanner.noBarcodeMsg')}</p>
             <Button onClick={() => setScanning(true)} className="mt-4 bg-emerald-500 text-white">
-              Open Scanner
+              {t('scanner.openScanner')}
             </Button>
           </div>
         )}

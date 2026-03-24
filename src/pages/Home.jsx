@@ -5,6 +5,7 @@ import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
+import { useLanguage } from '@/lib/LanguageContext';
 import { 
   ScanLine, 
   Plus, 
@@ -22,6 +23,7 @@ import ProductCard from '@/components/products/ProductCard';
 export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   
   const { data: products = [], isLoading: productsLoading } = useQuery({
@@ -71,9 +73,9 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
         
         <div className="relative z-10 text-center">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Find the Best Prices</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">{t('home.findBestPrices')}</h1>
           <p className="text-white/80 text-sm md:text-base mb-6">
-            Scan products and compare prices across stores
+            {t('home.heroSubtitle')}
           </p>
           
           <div className="flex justify-center">
@@ -83,7 +85,7 @@ export default function Home() {
                 className="bg-white text-emerald-600 hover:bg-white/90 rounded-2xl h-14 px-8 font-semibold shadow-lg"
               >
                 <ScanLine className="w-5 h-5 mr-2" />
-                Scan Product
+                {t('home.scanProduct')}
               </Button>
             </Link>
           </div>
@@ -97,9 +99,9 @@ export default function Home() {
             <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <ShoppingCart className="w-5 h-5 text-purple-600" />
             </div>
-            <h3 className="font-semibold text-slate-800">Shopping Lists</h3>
+            <h3 className="font-semibold text-slate-800">{t('home.shoppingLists')}</h3>
             <p className="text-xs text-slate-500 mt-1">
-              {activeList ? `Active: ${activeList.name}` : 'Create a list'}
+              {activeList ? `${t('home.activeList')}${activeList.name}` : t('home.createList')}
             </p>
           </div>
         </Link>
@@ -109,8 +111,8 @@ export default function Home() {
             <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <TrendingDown className="w-5 h-5 text-amber-600" />
             </div>
-            <h3 className="font-semibold text-slate-800">Compare Prices</h3>
-            <p className="text-xs text-slate-500 mt-1">Find the best deals</p>
+            <h3 className="font-semibold text-slate-800">{t('home.comparePrices')}</h3>
+            <p className="text-xs text-slate-500 mt-1">{t('home.findBestDeals')}</p>
           </div>
         </Link>
       </div>
@@ -121,7 +123,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-emerald-500" />
-              <h2 className="font-semibold text-slate-800">Price Drops</h2>
+              <h2 className="font-semibold text-slate-800">{t('home.priceDrops')}</h2>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -156,13 +158,13 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-slate-400" />
-            <h2 className="font-semibold text-slate-800">Recent Products</h2>
+            <h2 className="font-semibold text-slate-800">{t('home.recentProducts')}</h2>
           </div>
-          <Link 
-            to={createPageUrl('Products')} 
+          <Link
+            to={createPageUrl('Products')}
             className="text-sm text-emerald-600 font-medium flex items-center gap-1 hover:gap-2 transition-all"
           >
-            View all <ArrowRight className="w-4 h-4" />
+            {t('home.viewAll')} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
@@ -210,14 +212,14 @@ export default function Home() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
               <Package className="w-8 h-8 text-slate-300" />
             </div>
-            <h3 className="font-semibold text-slate-800 mb-2">No Products Yet</h3>
+            <h3 className="font-semibold text-slate-800 mb-2">{t('home.noProducts')}</h3>
             <p className="text-slate-500 text-sm mb-4">
-              Start by scanning a product to track its prices
+              {t('home.noProductsDesc')}
             </p>
             <Link to={createPageUrl('Scanner')}>
               <Button className="bg-emerald-500 hover:bg-emerald-600">
                 <ScanLine className="w-4 h-4 mr-2" />
-                Scan First Product
+                {t('home.scanFirst')}
               </Button>
             </Link>
           </div>

@@ -112,7 +112,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
         >
           <X className="w-6 h-6" />
         </Button>
-        <span className="text-white font-bold tracking-tight">PricePilot Scanner</span>
+        <span className="text-white font-bold tracking-tight">Bem na Mosca</span>
         <Button
           variant="ghost"
           size="icon"

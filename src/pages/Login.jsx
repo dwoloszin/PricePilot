@@ -2,13 +2,17 @@
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '@/lib/AuthContext';
+import { useLanguage } from '@/lib/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, ShieldCheck, Zap, Users } from 'lucide-react';
+import { ShieldCheck, Zap, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
+import TargetLogo from '@/components/ui/TargetLogo';
 import { toast } from 'sonner';
 
 export default function Login() {
   const { loginWithGoogle, isAuthenticated, user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   // If already authenticated, redirect to home or username setup
@@ -26,7 +30,7 @@ export default function Login() {
     try {
       const userData = await loginWithGoogle(credentialResponse);
       toast.success('Successfully logged in!');
-      
+
       // If user has no username, go to setup, otherwise go home
       if (userData && !userData.username) {
         navigate('/UsernameSetup');
@@ -47,11 +51,11 @@ export default function Login() {
       <div className="w-full max-w-md space-y-8">
         {/* Logo & Header */}
         <div className="text-center space-y-2">
-          <div className="w-20 h-20 bg-emerald-500 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-emerald-200">
-            <LogIn className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-emerald-200">
+            <TargetLogo className="w-11 h-11" color="white" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">PricePilot</h1>
-          <p className="text-slate-500">Your personal shopping co-pilot</p>
+          <h1 className="text-3xl font-bold text-slate-900">Bem na Mosca</h1>
+          <p className="text-slate-500">{t('login.subtitle')}</p>
         </div>
 
         {/* Features */}
@@ -61,18 +65,18 @@ export default function Login() {
               <ShieldCheck className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-800">Secure Access</h3>
-              <p className="text-sm text-slate-500">Keep your shopping lists and price history safe.</p>
+              <h3 className="font-semibold text-slate-800">{t('login.secureAccess')}</h3>
+              <p className="text-sm text-slate-500">{t('login.secureAccessDesc')}</p>
             </div>
           </div>
-          
+
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
               <Zap className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-800">Sync Everywhere</h3>
-              <p className="text-sm text-slate-500">Access your data from any device instantly.</p>
+              <h3 className="font-semibold text-slate-800">{t('login.syncEverywhere')}</h3>
+              <p className="text-sm text-slate-500">{t('login.syncEverywhereDesc')}</p>
             </div>
           </div>
 
@@ -81,8 +85,8 @@ export default function Login() {
               <Users className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-800">Community Driven</h3>
-              <p className="text-sm text-slate-500">Contribute prices and help others save money.</p>
+              <h3 className="font-semibold text-slate-800">{t('login.communityDriven')}</h3>
+              <p className="text-sm text-slate-500">{t('login.communityDrivenDesc')}</p>
             </div>
           </div>
         </div>
@@ -101,18 +105,24 @@ export default function Login() {
             />
           </div>
           <p className="text-xs text-slate-400 text-center px-8">
-            By signing in, you agree to our Terms of Service and Privacy Policy.
+            {t('login.terms')}
           </p>
+        </div>
+
+        {/* Language Switcher */}
+        <div className="flex flex-col items-center gap-2">
+          <span className="text-xs text-slate-400">{t('login.language')}</span>
+          <LanguageSwitcher />
         </div>
 
         {/* Guest Access */}
         <div className="text-center">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => navigate('/')}
             className="text-slate-500 hover:text-emerald-600"
           >
-            Continue as Guest
+            {t('login.continueAsGuest')}
           </Button>
         </div>
       </div>

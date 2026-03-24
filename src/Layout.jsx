@@ -2,18 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { useAuth } from '@/lib/AuthContext';
+import { useLanguage } from '@/lib/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
-import { 
-  Home, 
-  ScanLine, 
-  ShoppingCart, 
-  BarChart3, 
+import {
+  Home,
+  ScanLine,
+  ShoppingCart,
+  BarChart3,
   User,
   Menu,
   X,
   Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import TargetLogo from '@/components/ui/TargetLogo';
 
 // Mock data storage for local-only functionality
 const getLocalData = (key) => JSON.parse(localStorage.getItem(key) || '[]');
@@ -23,6 +25,7 @@ export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user: currentUser, isAuthenticated } = useAuth();
+  const { language, changeLanguage, t } = useLanguage();
 
   // Redirect to username setup if user doesn't have username
   useEffect(() => {
@@ -39,21 +42,27 @@ export default function Layout({ children, currentPageName }) {
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
       const startStr = startOfMonth.toISOString().split('T')[0];
-      
+
       return allPrices.filter(p => (p.date_recorded || p.created_date) >= startStr);
     }
   });
 
-  const monthlyTotal = priceEntries.reduce((sum, entry) => 
+  const monthlyTotal = priceEntries.reduce((sum, entry) =>
     sum + (entry.price * (entry.quantity || 1)), 0
   );
 
+  const cycleLanguage = () => {
+    const langs = ['en', 'pt', 'es'];
+    const next = langs[(langs.indexOf(language) + 1) % langs.length];
+    changeLanguage(next);
+  };
+
   const navItems = [
-    { name: 'Home', page: 'Home', icon: Home },
-    { name: 'Scan', page: 'Scanner', icon: ScanLine },
-    { name: 'Lists', page: 'ShoppingLists', icon: ShoppingCart },
-    { name: 'Compare', page: 'PriceComparison', icon: BarChart3 },
-    { name: 'Profile', page: 'Profile', icon: User },
+    { nameKey: 'nav.home', page: 'Home', icon: Home },
+    { nameKey: 'nav.scan', page: 'Scanner', icon: ScanLine },
+    { nameKey: 'nav.lists', page: 'ShoppingLists', icon: ShoppingCart },
+    { nameKey: 'nav.compare', page: 'PriceComparison', icon: BarChart3 },
+    { nameKey: 'nav.profile', page: 'Profile', icon: User },
   ];
 
   // Don't render layout for Login, UsernameSetup, or Scanner page
@@ -68,17 +77,24 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <ScanLine className="w-5 h-5 text-white" />
+              <TargetLogo className="w-5 h-5" color="white" />
             </div>
-            <span className="font-semibold text-slate-800 tracking-tight">PricePilot</span>
+            <span className="font-semibold text-slate-800 tracking-tight">Bem na Mosca</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={cycleLanguage}
+              className="text-xs font-bold text-slate-500 hover:text-emerald-600 bg-slate-100 hover:bg-emerald-50 px-2 py-1 rounded-lg transition-colors"
+              title="Change language"
+            >
+              {language.toUpperCase()}
+            </button>
             <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full">
-              <span className="text-xs text-slate-500">This month</span>
+              <span className="text-xs text-slate-500">{t('header.thisMonth')}</span>
               <span className="font-semibold text-emerald-600">${monthlyTotal.toFixed(2)}</span>
             </div>
             {!isAuthenticated && (
-              <Link 
+              <Link
                 to={createPageUrl('Login')}
                 className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
               >
@@ -109,8 +125,8 @@ export default function Layout({ children, currentPageName }) {
                   to={createPageUrl(item.page)}
                   className={cn(
                     "flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-all duration-300",
-                    isActive 
-                      ? "bg-emerald-50 text-emerald-600" 
+                    isActive
+                      ? "bg-emerald-50 text-emerald-600"
                       : "text-slate-400 hover:text-slate-600"
                   )}
                 >
@@ -118,7 +134,7 @@ export default function Layout({ children, currentPageName }) {
                   <span className={cn(
                     "text-[10px] font-medium",
                     isActive && "text-emerald-700"
-                  )}>{item.name}</span>
+                  )}>{t(item.nameKey)}</span>
                 </Link>
               );
             })}

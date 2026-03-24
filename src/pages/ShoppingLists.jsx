@@ -23,11 +23,13 @@ import {
 import ShoppingListCard from '@/components/lists/ShoppingListCard';
 import { useAuth } from '@/lib/AuthContext';
 import LoginPrompt from '@/components/ui/LoginPrompt';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function ShoppingLists() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [showCreate, setShowCreate] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListBudget, setNewListBudget] = useState('');
@@ -91,8 +93,8 @@ export default function ShoppingLists() {
   if (!user) {
     return (
       <div className="px-4 py-6">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">Shopping Lists</h1>
-        <LoginPrompt message="Sign in to create and manage your shopping lists." />
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">{t('lists.title')}</h1>
+        <LoginPrompt message={t('lists.loginPrompt')} />
       </div>
     );
   }
@@ -101,13 +103,13 @@ export default function ShoppingLists() {
     <div className="px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-800">Shopping Lists</h1>
-        <Button 
+        <h1 className="text-2xl font-bold text-slate-800">{t('lists.title')}</h1>
+        <Button
           onClick={() => setShowCreate(true)}
           className="bg-emerald-500 hover:bg-emerald-600 rounded-xl"
         >
           <Plus className="w-4 h-4 mr-2" />
-          New List
+          {t('lists.newList')}
         </Button>
       </div>
 
@@ -141,8 +143,8 @@ export default function ShoppingLists() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-800">Fast List</h3>
-                  <p className="text-xs text-slate-500">Quick add & scan items</p>
+                  <h3 className="font-semibold text-slate-800">{t('lists.fastList')}</h3>
+                  <p className="text-xs text-slate-500">{t('lists.fastListSubtitle')}</p>
                 </div>
               </div>
               <div className="text-right">
@@ -171,16 +173,16 @@ export default function ShoppingLists() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-purple-100 flex items-center justify-center">
                 <ShoppingCart className="w-8 h-8 text-purple-400" />
               </div>
-              <h3 className="font-semibold text-slate-800 mb-2">No Shopping Lists Yet</h3>
+              <h3 className="font-semibold text-slate-800 mb-2">{t('lists.noLists')}</h3>
               <p className="text-slate-500 text-sm mb-4">
-                Create a list to start tracking your shopping and comparing prices
+                {t('lists.noListsDesc')}
               </p>
-              <Button 
+              <Button
                 onClick={() => setShowCreate(true)}
                 className="bg-emerald-500 hover:bg-emerald-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create Your First List
+                {t('lists.createFirst')}
               </Button>
             </div>
           )}
@@ -191,20 +193,20 @@ export default function ShoppingLists() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Shopping List</DialogTitle>
+            <DialogTitle>{t('lists.createTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>List Name</Label>
+              <Label>{t('lists.listName')}</Label>
               <Input
                 value={newListName}
                 onChange={(e) => setNewListName(e.target.value)}
-                placeholder="e.g., Monthly Groceries"
+                placeholder={t('lists.listNamePlaceholder')}
                 className="h-12"
               />
             </div>
             <div className="space-y-2">
-              <Label>Budget (optional)</Label>
+              <Label>{t('lists.budget')}</Label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
                 <Input
@@ -220,9 +222,9 @@ export default function ShoppingLists() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
-            <Button 
+            <Button
               onClick={handleCreateList}
               disabled={!newListName.trim() || createListMutation.isPending}
               className="bg-emerald-500 hover:bg-emerald-600"
@@ -230,7 +232,7 @@ export default function ShoppingLists() {
               {createListMutation.isPending && (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               )}
-              Create List
+              {t('common.create')}
             </Button>
           </DialogFooter>
         </DialogContent>

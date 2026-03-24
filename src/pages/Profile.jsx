@@ -29,10 +29,13 @@ import {
 } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import LoginPrompt from '@/components/ui/LoginPrompt';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function Profile() {
   const queryClient = useQueryClient();
   const { user, logout, isLoadingAuth } = useAuth();
+  const { t } = useLanguage();
   const [showEdit, setShowEdit] = useState(false);
   const [editName, setEditName] = useState('');
 
@@ -111,8 +114,12 @@ export default function Profile() {
   if (!user) {
     return (
       <div className="px-4 py-6">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">Profile</h1>
-        <LoginPrompt message="Sign in to view your profile, track your savings, and manage your shopping history." />
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">{t('profile.title')}</h1>
+        <LoginPrompt message={t('profile.loginPrompt')} />
+        <div className="flex flex-col items-center gap-2 mt-4">
+          <span className="text-xs text-slate-400">{t('profile.language')}</span>
+          <LanguageSwitcher />
+        </div>
       </div>
     );
   }
@@ -136,7 +143,7 @@ export default function Profile() {
             {user?.username && user?.full_name && (
               <p className="text-slate-500 text-sm font-medium">{user.full_name}</p>
             )}
-            <p className="text-slate-500 text-sm">{user?.email || 'Sign in to sync your data'}</p>
+            <p className="text-slate-500 text-sm">{user?.email || t('profile.signInToSync')}</p>
           </div>
           <Button 
             variant="ghost" 
@@ -149,9 +156,9 @@ export default function Profile() {
         </div>
 
         <div className="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between text-sm">
-          <span className="text-slate-500">Member since</span>
+          <span className="text-slate-500">{t('profile.memberSince')}</span>
           <span className="font-medium text-slate-700">
-            {user?.created_date ? format(new Date(user.created_date), 'MMMM yyyy') : 'N/A'}
+            {user?.created_date ? format(new Date(user.created_date), 'MMMM yyyy') : t('common.na')}
           </span>
         </div>
       </div>
@@ -163,31 +170,31 @@ export default function Profile() {
             <Package className="w-5 h-5 text-blue-600" />
           </div>
           <p className="text-2xl font-bold text-slate-800">{totalProducts}</p>
-          <p className="text-sm text-slate-500">Products tracked</p>
+          <p className="text-sm text-slate-500">{t('profile.productsTracked')}</p>
         </div>
-        
+
         <div className="bg-white rounded-2xl p-4 border border-slate-100">
           <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center mb-3">
             <Receipt className="w-5 h-5 text-purple-600" />
           </div>
           <p className="text-2xl font-bold text-slate-800">{totalPriceEntries}</p>
-          <p className="text-sm text-slate-500">Price entries</p>
+          <p className="text-sm text-slate-500">{t('profile.priceEntries')}</p>
         </div>
-        
+
         <div className="bg-white rounded-2xl p-4 border border-slate-100">
           <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center mb-3">
             <Store className="w-5 h-5 text-amber-600" />
           </div>
           <p className="text-2xl font-bold text-slate-800">{uniqueStores}</p>
-          <p className="text-sm text-slate-500">Stores visited</p>
+          <p className="text-sm text-slate-500">{t('profile.storesVisited')}</p>
         </div>
-        
+
         <div className="bg-white rounded-2xl p-4 border border-slate-100">
           <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center mb-3">
             <ShoppingCart className="w-5 h-5 text-pink-600" />
           </div>
           <p className="text-2xl font-bold text-slate-800">{totalLists}</p>
-          <p className="text-sm text-slate-500">Shopping lists</p>
+          <p className="text-sm text-slate-500">{t('profile.shoppingLists')}</p>
         </div>
       </div>
 
@@ -195,15 +202,15 @@ export default function Profile() {
       <div className="bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl p-5 text-white">
         <div className="flex items-center gap-2 mb-4">
           <Calendar className="w-5 h-5" />
-          <h3 className="font-semibold">This Month</h3>
+          <h3 className="font-semibold">{t('profile.thisMonth')}</h3>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-emerald-100 text-sm">Total Spending</p>
+            <p className="text-emerald-100 text-sm">{t('profile.totalSpending')}</p>
             <p className="text-3xl font-bold">${monthlySpending.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-emerald-100 text-sm">Potential Savings</p>
+            <p className="text-emerald-100 text-sm">{t('profile.potentialSavings')}</p>
             <p className="text-3xl font-bold">${totalSavings.toFixed(2)}</p>
           </div>
         </div>
@@ -213,39 +220,47 @@ export default function Profile() {
       <div className="bg-white rounded-2xl p-5 border border-slate-100">
         <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-emerald-500" />
-          Activity Summary
+          {t('profile.activitySummary')}
         </h3>
         <div className="space-y-3">
           <div className="flex items-center justify-between py-2 border-b border-slate-100">
-            <span className="text-slate-600">Entries this month</span>
+            <span className="text-slate-600">{t('profile.entriesThisMonth')}</span>
             <span className="font-semibold text-slate-800">{monthlyEntries.length}</span>
           </div>
           <div className="flex items-center justify-between py-2 border-b border-slate-100">
-            <span className="text-slate-600">Avg. price per entry</span>
+            <span className="text-slate-600">{t('profile.avgPrice')}</span>
             <span className="font-semibold text-slate-800">
-              ${priceEntries.length > 0 
+              ${priceEntries.length > 0
                 ? (priceEntries.reduce((sum, p) => sum + p.price, 0) / priceEntries.length).toFixed(2)
                 : '0.00'
               }
             </span>
           </div>
           <div className="flex items-center justify-between py-2">
-            <span className="text-slate-600">Best savings found</span>
+            <span className="text-slate-600">{t('profile.bestSavings')}</span>
             <span className="font-semibold text-emerald-600">
-              {totalSavings > 0 ? `$${totalSavings.toFixed(2)}` : 'N/A'}
+              {totalSavings > 0 ? `$${totalSavings.toFixed(2)}` : t('common.na')}
             </span>
           </div>
         </div>
       </div>
 
+      {/* Language */}
+      <div className="bg-white rounded-2xl p-5 border border-slate-100">
+        <div className="flex items-center justify-between">
+          <span className="font-medium text-slate-700">{t('profile.language')}</span>
+          <LanguageSwitcher />
+        </div>
+      </div>
+
       {/* Logout Button */}
-      <Button 
+      <Button
         variant="outline"
         onClick={handleLogout}
         className="w-full h-12 rounded-xl border-red-200 text-red-600 hover:bg-red-50"
       >
         <LogOut className="w-5 h-5 mr-2" />
-        Sign Out
+        {t('common.signOut')}
       </Button>
 
       {/* Edit Dialog */}

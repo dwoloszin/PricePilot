@@ -29,11 +29,13 @@ import BarcodeScanner from '@/components/scanner/BarcodeScanner';
 import { useAuth } from '@/lib/AuthContext';
 import { cn } from '@/lib/utils';
 import LoginPrompt from '@/components/ui/LoginPrompt';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function FastList() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { t } = useLanguage();
   
   const [scanning, setScanning] = useState(false);
   const [showInputModal, setShowInputModal] = useState(false);
@@ -216,8 +218,8 @@ export default function FastList() {
   if (!user) {
     return (
       <div className="px-4 py-6">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">Fast List</h1>
-        <LoginPrompt message="Sign in to use the Fast List and quickly track what you spend while shopping." />
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">{t('fastList.title')}</h1>
+        <LoginPrompt message={t('fastList.loginPrompt')} />
       </div>
     );
   }
@@ -226,7 +228,7 @@ export default function FastList() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
-        <p className="text-slate-600">Initializing Fast List...</p>
+        <p className="text-slate-600">{t('fastList.initializing')}</p>
       </div>
     );
   }
