@@ -52,6 +52,11 @@ export const AuthProvider = ({ children }) => {
       const storedUser = localStorage.getItem('pricepilot_user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
+        // Backfill created_date for users who logged in before this field was added
+        if (!parsedUser.created_date) {
+          parsedUser.created_date = new Date().toISOString();
+          localStorage.setItem('pricepilot_user', JSON.stringify(parsedUser));
+        }
         setUser(parsedUser);
         setIsAuthenticated(true);
       } else {
@@ -107,12 +112,13 @@ export const AuthProvider = ({ children }) => {
         (isLinked ? allUsers.find(u => u.email === googleUser.email) : null);
 
       const userData = {
-        id:        firebaseUid,
-        full_name: googleUser.name,
-        email:     googleUser.email,
-        picture:   googleUser.picture,
-        provider:  isLinked ? 'email+google' : 'google',
-        username:  existingRecord?.username || null,
+        id:           firebaseUid,
+        full_name:    googleUser.name,
+        email:        googleUser.email,
+        picture:      googleUser.picture,
+        provider:     isLinked ? 'email+google' : 'google',
+        username:     existingRecord?.username || null,
+        created_date: existingRecord?.created_date || new Date().toISOString(),
       };
 
       setUser(userData);
@@ -162,12 +168,13 @@ export const AuthProvider = ({ children }) => {
       const existingUserRecord = allUsers.find(u => u.id === firebaseUser.uid);
 
       const userData = {
-        id: firebaseUser.uid,
-        full_name: firebaseUser.displayName || email.split('@')[0],
-        email: firebaseUser.email,
-        picture: firebaseUser.photoURL || null,
-        provider: 'email',
-        username: existingUserRecord ? existingUserRecord.username : null,
+        id:           firebaseUser.uid,
+        full_name:    firebaseUser.displayName || email.split('@')[0],
+        email:        firebaseUser.email,
+        picture:      firebaseUser.photoURL || null,
+        provider:     'email',
+        username:     existingUserRecord?.username || null,
+        created_date: existingUserRecord?.created_date || new Date().toISOString(),
       };
 
       setUser(userData);

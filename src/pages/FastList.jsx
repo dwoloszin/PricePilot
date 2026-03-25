@@ -268,14 +268,22 @@ export default function FastList() {
           </Button>
         </div>
         
-        <div className="bg-slate-900 rounded-2xl p-4 text-white flex items-center justify-between">
-          <div>
+        <div className="bg-slate-900 rounded-2xl p-4 text-white flex items-center justify-between gap-4">
+          <div className="flex-1">
             <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Total Amount</p>
             <p className="text-3xl font-bold">${cumulativeValue.toFixed(2)}</p>
           </div>
+          <div className="w-px h-10 bg-slate-700" />
           <div className="text-right">
-            <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Items</p>
+            <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Types</p>
             <p className="text-xl font-semibold">{fastList.items?.length || 0}</p>
+          </div>
+          <div className="w-px h-10 bg-slate-700" />
+          <div className="text-right">
+            <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Total Units</p>
+            <p className="text-xl font-semibold">
+              {fastList.items?.reduce((sum, i) => sum + (i.quantity || 1), 0) || 0}
+            </p>
           </div>
         </div>
       </div>
