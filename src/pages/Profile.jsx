@@ -285,33 +285,33 @@ export default function Profile() {
                   <Crown className={`w-5 h-5 ${active ? 'text-emerald-600' : 'text-slate-400'}`} />
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-800">Assinatura</p>
-                  <p className="text-xs text-slate-500">R$ 9,90 / mês</p>
+                  <p className="font-semibold text-slate-800">{t('profile.subscription')}</p>
+                  <p className="text-xs text-slate-500">{t('profile.subscriptionPrice')}</p>
                 </div>
               </div>
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                {active ? 'Ativa' : 'Inativa'}
+                {active ? t('profile.subscriptionActive') : t('profile.subscriptionInactive')}
               </span>
             </div>
 
             {active && expires && (
               <div className="mb-3 space-y-1">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-500">Expira em</span>
+                  <span className="text-slate-500">{t('profile.subscriptionExpiresOn')}</span>
                   <span className="font-semibold text-slate-700">
                     {format(expires, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-500">Dias restantes</span>
+                  <span className="text-slate-500">{t('profile.subscriptionDaysLeft')}</span>
                   <span className={`font-bold ${days <= 5 ? 'text-red-500' : 'text-emerald-600'}`}>
-                    {days} {days === 1 ? 'dia' : 'dias'}
+                    {days} {days === 1 ? t('profile.subscriptionDay') : t('profile.subscriptionDays')}
                   </span>
                 </div>
                 {days <= 5 && (
                   <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 rounded-lg p-2 mt-1">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    Sua assinatura vence em breve. Renove para não perder o acesso.
+                    {t('profile.subscriptionExpiringSoon')}
                   </div>
                 )}
               </div>
@@ -319,7 +319,7 @@ export default function Profile() {
 
             {!active && (
               <p className="text-sm text-slate-500 mb-3">
-                Assine para desbloquear todos os recursos premium.
+                {t('profile.subscriptionCTA')}
               </p>
             )}
 
@@ -328,7 +328,7 @@ export default function Profile() {
               className={`w-full h-11 rounded-xl font-semibold ${active ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}
             >
               <Zap className="w-4 h-4 mr-2" />
-              {active ? 'Renovar assinatura' : 'Assinar agora — R$ 9,90'}
+              {active ? t('profile.renewSubscription') : t('profile.subscribeNow')}
             </Button>
           </div>
         );
@@ -338,7 +338,7 @@ export default function Profile() {
       <PixPaymentModal
         open={showPix}
         onOpenChange={setShowPix}
-        onPaymentConfirmed={() => toast.success('Assinatura ativada! Bem-vindo ao premium 🎉')}
+        onPaymentConfirmed={() => toast.success(t('profile.subscriptionActivated'))}
       />
 
       {/* Logout Button */}
