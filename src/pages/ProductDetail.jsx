@@ -97,8 +97,12 @@ export default function ProductDetail() {
   });
 
   const { data: lists = [] } = useQuery({
-    queryKey: ['shopping-lists'],
-    queryFn: () => base44.entities.ShoppingList.list()
+    queryKey: ['shopping-lists', user?.id],
+    queryFn: async () => {
+      const all = await base44.entities.ShoppingList.list('-created_date', null, user?.id);
+      return all.filter(l => !l.is_fast_list);
+    },
+    enabled: !!user?.id
   });
 
   const createPriceEntryMutation = useMutation({

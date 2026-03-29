@@ -59,6 +59,15 @@ export const AuthProvider = ({ children }) => {
         }
         setUser(parsedUser);
         setIsAuthenticated(true);
+        // One-time sync: push username to Firestore for users who registered
+        // before UsernameSetup was fixed to write to Firestore
+        const syncKey = `pricepilot_username_synced_${parsedUser.id}`;
+        if (parsedUser.username && parsedUser.id && !localStorage.getItem(syncKey)) {
+          try {
+            await setDoc(doc(db, 'User', parsedUser.id), { username: parsedUser.username }, { merge: true });
+            localStorage.setItem(syncKey, '1');
+          } catch { /* silent */ }
+        }
       } else {
         setUser(null);
         setIsAuthenticated(false);
@@ -125,12 +134,17 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       localStorage.setItem('pricepilot_user', JSON.stringify(userData));
 
-      // Upsert Firestore record (merge keeps existing fields like likes/dislikes)
+      // Upsert Firestore record — only send fields that should be updated,
+      // never overwrite likes/dislikes which are managed separately
       try {
         await setDoc(doc(db, 'User', firebaseUid), {
-          ...userData,
-          created_date: new Date().toISOString(),
-          likes: [], dislikes: [], likes_names: [], dislikes_names: [],
+          id:           userData.id,
+          full_name:    userData.full_name,
+          email:        userData.email,
+          picture:      userData.picture,
+          provider:     userData.provider,
+          username:     userData.username,
+          created_date: userData.created_date,
         }, { merge: true });
       } catch (fsErr) {
         console.warn('Failed to update User in Firestore:', fsErr);

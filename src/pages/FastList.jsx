@@ -8,16 +8,17 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { 
-  ArrowLeft, 
-  Zap, 
-  Barcode, 
-  Plus, 
-  Trash2, 
+import {
+  ArrowLeft,
+  Zap,
+  Barcode,
+  Plus,
+  Trash2,
   Loader2,
   Package,
   ChevronRight,
-  ScanLine
+  ScanLine,
+  ShoppingCart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +44,9 @@ export default function FastList() {
   
   const [scanning, setScanning] = useState(false);
   const [showInputModal, setShowInputModal] = useState(false);
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
+  const [convertName, setConvertName] = useState('');
+  const [convertBudget, setConvertBudget] = useState('');
   const [currentBarcode, setCurrentBarcode] = useState('');
   const [itemValue, setItemValue] = useState('');
   const [itemQuantity, setItemQuantity] = useState('1');
@@ -81,6 +85,36 @@ export default function FastList() {
     onSuccess: () => {
       queryClient.invalidateQueries(['shopping-lists']);
     }
+  });
+
+  const convertToListMutation = useMutation({
+    mutationFn: async () => {
+      const allProducts = await base44.entities.Product.list();
+      const items = (fastList.items || []).map(item => {
+        const matched = allProducts.find(p => String(p.barcode) === String(item.barcode));
+        return {
+          product_id: matched?.id || null,
+          product_name: item.product_name || matched?.name || `Produto ${item.barcode?.slice(-4)}`,
+          desired_quantity: item.quantity || 1,
+          checked: false,
+        };
+      });
+      return base44.entities.ShoppingList.create({
+        name: convertName.trim(),
+        budget: convertBudget ? parseFloat(convertBudget) : null,
+        items,
+        user_id: user?.id,
+        is_active: false,
+      });
+    },
+    onSuccess: (newList) => {
+      setShowConvertDialog(false);
+      setConvertName('');
+      setConvertBudget('');
+      queryClient.invalidateQueries(['shopping-lists']);
+      toast.success('Lista criada!');
+      window.location.hash = `#/ShoppingListDetail?id=${newList.id}`;
+    },
   });
 
   const updateFastListMutation = useMutation({
@@ -257,15 +291,30 @@ export default function FastList() {
             </div>
             <h1 className="font-bold text-slate-800 text-lg">Fast List</h1>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-            onClick={() => createFastListMutation.mutate()}
-          >
-            <Trash2 className="w-4 h-4 mr-1" />
-            Clear List
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+              disabled={!fastList?.items?.length}
+              onClick={() => {
+                setConvertName('Lista ' + new Date().toLocaleDateString('pt-BR'));
+                setShowConvertDialog(true);
+              }}
+            >
+              <ShoppingCart className="w-4 h-4 mr-1" />
+              Salvar Lista
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+              onClick={() => createFastListMutation.mutate()}
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Limpar
+            </Button>
+          </div>
         </div>
         
         <div className="bg-slate-900 rounded-2xl p-4 text-white flex items-center justify-between gap-4">
@@ -358,6 +407,59 @@ export default function FastList() {
           </Button>
         </div>
       </div>
+
+      {/* Convert to Normal List Dialog */}
+      <Dialog open={showConvertDialog} onOpenChange={setShowConvertDialog}>
+        <DialogContent className="sm:max-w-[400px] rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5 text-emerald-500" />
+              Salvar como Lista
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nome da lista</Label>
+              <Input
+                value={convertName}
+                onChange={e => setConvertName(e.target.value)}
+                placeholder="Ex: Compras da semana"
+                className="h-12"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Orçamento (opcional)</Label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={convertBudget}
+                  onChange={e => setConvertBudget(e.target.value)}
+                  placeholder="0.00"
+                  className="pl-8 h-12"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-slate-400">
+              {fastList?.items?.length || 0} {fastList?.items?.length === 1 ? 'item será adicionado' : 'itens serão adicionados'} à nova lista.
+            </p>
+          </div>
+          <DialogFooter className="gap-3">
+            <Button variant="outline" className="flex-1" onClick={() => setShowConvertDialog(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => convertToListMutation.mutate()}
+              disabled={!convertName.trim() || convertToListMutation.isPending}
+              className="flex-1 bg-emerald-500 hover:bg-emerald-600"
+            >
+              {convertToListMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Criar Lista
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Input Modal */}
       <Dialog open={showInputModal} onOpenChange={setShowInputModal}>

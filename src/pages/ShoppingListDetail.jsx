@@ -8,7 +8,7 @@ import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { 
+import {
   ArrowLeft,
   Plus,
   Trash2,
@@ -19,8 +19,12 @@ import {
   Minus,
   Package,
   MapPin,
-  ShoppingCart
+  ShoppingCart,
+  ScanLine,
+  Search,
+  X
 } from 'lucide-react';
+import BarcodeScanner from '@/components/scanner/BarcodeScanner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -68,6 +72,8 @@ export default function ShoppingListDetail() {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [scanningForAdd, setScanningForAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editName, setEditName] = useState('');
   const [editBudget, setEditBudget] = useState('');
@@ -237,6 +243,45 @@ export default function ShoppingListDetail() {
   const progress = totalItems > 0 ? (checkedItems / totalItems) * 100 : 0;
   const estimatedTotal = storeComparison[0]?.[1]?.total || 0;
 
+  const filteredProducts = products.filter(p => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      p.name?.toLowerCase().includes(q) ||
+      p.brand?.toLowerCase().includes(q) ||
+      String(p.barcode || '').includes(q)
+    );
+  }).slice(0, 6);
+
+  const selectedProduct = products.find(p => p.id === selectedProductId);
+
+  const openAddDialog = () => {
+    setSelectedProductId('');
+    setSearchQuery('');
+    setQuantity(1);
+    setShowAddProduct(true);
+  };
+
+  if (scanningForAdd) {
+    return (
+      <BarcodeScanner
+        onScan={(barcode) => {
+          const found = products.find(p => String(p.barcode) === String(barcode));
+          if (found) {
+            setSelectedProductId(found.id);
+            setSearchQuery(found.name);
+            toast.success(`Produto encontrado: ${found.name}`);
+          } else {
+            toast.error('Produto não encontrado. Pesquise manualmente.');
+          }
+          setScanningForAdd(false);
+          setShowAddProduct(true);
+        }}
+        onClose={() => { setScanningForAdd(false); setShowAddProduct(true); }}
+      />
+    );
+  }
+
   if (listLoading) {
     return (
       <div className="px-4 py-6 space-y-6">
@@ -377,154 +422,212 @@ export default function ShoppingListDetail() {
         )}
 
         {/* Items List */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-slate-800">Items</h3>
-            <Button 
-              onClick={() => setShowAddProduct(true)}
-              size="sm"
-              className="bg-emerald-500 hover:bg-emerald-600 rounded-xl"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Add
-            </Button>
-          </div>
+        {(() => {
+          const indexed = (list.items || []).map((item, idx) => ({ ...item, _idx: idx }));
+          const pending = indexed.filter(i => !i.checked).sort((a, b) => (a.product_name || '').localeCompare(b.product_name || ''));
+          const done    = indexed.filter(i =>  i.checked).sort((a, b) => (a.product_name || '').localeCompare(b.product_name || ''));
 
-          {list.items?.length > 0 ? (
-            <div className="space-y-2">
-              {list.items.map((item, idx) => {
-                const product = getProductById(item.product_id);
-                const price = getProductPrice(item.product_id);
-                return (
-                  <div 
-                    key={idx}
-                    className={`bg-white rounded-xl p-4 border transition-all ${item.checked ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-100'}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={item.checked}
-                        onCheckedChange={() => handleToggleItem(idx)}
-                        className="h-6 w-6 rounded-full"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <Link 
-                          to={`/ProductDetail?id=${item.product_id}`}
-                        >
-                          <p className={`font-medium ${item.checked ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-                            {item.product_name || product?.name || 'Unknown Product'}
+          const renderItem = (item) => {
+            const product = getProductById(item.product_id);
+            const price   = getProductPrice(item.product_id);
+            const image   = item.image_url || product?.image_url;
+            const barcode = product?.barcode || item.barcode;
+            return (
+              <div
+                key={item._idx}
+                className={`bg-white rounded-xl p-4 border transition-all ${item.checked ? 'opacity-60 border-slate-100' : 'border-slate-100'}`}
+              >
+                <div className="flex items-center gap-3">
+                  {/* Thumbnail */}
+                  <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-100">
+                    {image
+                      ? <img src={image} alt="" className="w-full h-full object-cover" />
+                      : <Package className="w-6 h-6 text-slate-300" />
+                    }
+                  </div>
+
+                  <Checkbox
+                    checked={item.checked}
+                    onCheckedChange={() => handleToggleItem(item._idx)}
+                    className="h-6 w-6 rounded-full flex-shrink-0"
+                  />
+
+                  <div className="flex-1 min-w-0">
+                    {item.product_id
+                      ? <Link to={`/ProductDetail?id=${item.product_id}`}>
+                          <p className={`font-medium truncate ${item.checked ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                            {item.product_name || product?.name || 'Produto desconhecido'}
                           </p>
                         </Link>
-                        {price && (
-                          <p className="text-sm text-slate-500">
-                            ${price.toFixed(2)} each
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleUpdateQuantity(idx, -1)}
-                          className="h-8 w-8 rounded-full"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </Button>
-                        <span className="w-8 text-center font-semibold">
-                          {item.desired_quantity || 1}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleUpdateQuantity(idx, 1)}
-                          className="h-8 w-8 rounded-full"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveItem(idx)}
-                          className="h-8 w-8 rounded-full text-slate-400 hover:text-red-500"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      : <p className={`font-medium truncate ${item.checked ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                          {item.product_name || 'Produto desconhecido'}
+                        </p>
+                    }
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {price && <span className="text-sm text-slate-500">${price.toFixed(2)}</span>}
+                      {barcode && <span className="text-[10px] text-slate-400 font-mono">{barcode}</span>}
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleUpdateQuantity(item._idx, -1)} className="h-7 w-7 rounded-full">
+                      <Minus className="w-3 h-3" />
+                    </Button>
+                    <span className="w-7 text-center font-semibold text-sm">{item.desired_quantity || 1}</span>
+                    <Button variant="ghost" size="icon" onClick={() => handleUpdateQuantity(item._idx,  1)} className="h-7 w-7 rounded-full">
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item._idx)} className="h-7 w-7 rounded-full text-slate-300 hover:text-red-500">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          };
+
+          return (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-slate-800">Itens</h3>
+                <Button onClick={openAddDialog} size="sm" className="bg-emerald-500 hover:bg-emerald-600 rounded-xl">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Adicionar
+                </Button>
+              </div>
+
+              {indexed.length === 0 ? (
+                <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center">
+                  <Package className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                  <p className="text-slate-500 text-sm mb-4">Nenhum item na lista ainda</p>
+                  <Button onClick={openAddDialog} className="bg-emerald-500 hover:bg-emerald-600">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Primeiro Item
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {/* Pending items — A-Z */}
+                  {pending.length > 0 && (
+                    <div className="space-y-2">
+                      {pending.map(renderItem)}
+                    </div>
+                  )}
+
+                  {/* Checked items — separated */}
+                  {done.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 pt-2">
+                        <div className="flex-1 h-px bg-slate-200" />
+                        <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          Concluídos ({done.length})
+                        </span>
+                        <div className="flex-1 h-px bg-slate-200" />
+                      </div>
+                      {done.map(renderItem)}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-          ) : (
-            <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center">
-              <Package className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-              <p className="text-slate-500 text-sm mb-4">No items in this list yet</p>
-              <Button 
-                onClick={() => setShowAddProduct(true)}
-                className="bg-emerald-500 hover:bg-emerald-600"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add First Item
-              </Button>
-            </div>
-          )}
-        </div>
+          );
+        })()}
       </div>
 
       {/* Add Product Dialog */}
-      <Dialog open={showAddProduct} onOpenChange={setShowAddProduct}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Product to List</DialogTitle>
+      <Dialog open={showAddProduct} onOpenChange={(open) => { setShowAddProduct(open); if (!open) { setSearchQuery(''); setSelectedProductId(''); } }}>
+        <DialogContent className="sm:max-w-[440px] rounded-3xl p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle>Adicionar Produto</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Select Product</Label>
-              <Select value={selectedProductId} onValueChange={setSelectedProductId}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Choose a product..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map(p => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} {p.brand && `(${p.brand})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Quantity</Label>
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                >
-                  <Minus className="w-4 h-4" />
-                </Button>
-                <span className="text-2xl font-bold w-12 text-center">{quantity}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setQuantity(quantity + 1)}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
+
+          <div className="px-6 pb-6 space-y-4">
+            {/* Search + Scan row */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  value={searchQuery}
+                  onChange={e => { setSearchQuery(e.target.value); setSelectedProductId(''); }}
+                  placeholder="Buscar por nome ou código de barras..."
+                  className="pl-9 h-11"
+                  autoFocus
+                />
+                {searchQuery && (
+                  <button onClick={() => { setSearchQuery(''); setSelectedProductId(''); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
+              <Button
+                variant="outline"
+                className="h-11 px-3 shrink-0"
+                onClick={() => { setShowAddProduct(false); setScanningForAdd(true); }}
+                title="Escanear código de barras"
+              >
+                <ScanLine className="w-5 h-5 text-emerald-600" />
+              </Button>
+            </div>
+
+            {/* Selected product highlight */}
+            {selectedProduct && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-emerald-800 text-sm">{selectedProduct.name}</p>
+                  {selectedProduct.brand && <p className="text-xs text-emerald-600">{selectedProduct.brand}</p>}
+                </div>
+                <Check className="w-5 h-5 text-emerald-500" />
+              </div>
+            )}
+
+            {/* Search results */}
+            {!selectedProduct && searchQuery.trim() && (
+              <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 max-h-48 overflow-y-auto">
+                {filteredProducts.length === 0 ? (
+                  <div className="px-4 py-3 text-sm text-slate-400 text-center">Nenhum produto encontrado</div>
+                ) : (
+                  filteredProducts.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => { setSelectedProductId(p.id); setSearchQuery(p.name); }}
+                      className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors"
+                    >
+                      <p className="font-medium text-slate-800 text-sm">{p.name}</p>
+                      <p className="text-xs text-slate-400">{p.brand || ''} {p.barcode ? `· ${p.barcode}` : ''}</p>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Quantity */}
+            {selectedProductId && (
+              <div className="space-y-2">
+                <Label>Quantidade</Label>
+                <div className="flex items-center gap-4">
+                  <Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                  <span className="text-2xl font-bold w-12 text-center">{quantity}</span>
+                  <Button variant="outline" size="icon" onClick={() => setQuantity(quantity + 1)}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setShowAddProduct(false)}>Cancelar</Button>
+              <Button
+                onClick={handleAddProduct}
+                disabled={!selectedProductId}
+                className="flex-1 bg-emerald-500 hover:bg-emerald-600"
+              >
+                Adicionar
+              </Button>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddProduct(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAddProduct}
-              disabled={!selectedProductId}
-              className="bg-emerald-500 hover:bg-emerald-600"
-            >
-              Add to List
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

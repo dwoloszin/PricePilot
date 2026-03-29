@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import TargetLogo from '@/components/ui/TargetLogo';
+import { base44 } from '@/api/base44Client';
 
 export default function UsernameSetup() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -148,6 +149,22 @@ export default function UsernameSetup() {
         allUsers.push({ id: user.id, username: username.trim() });
       }
       localStorage.setItem('pricepilot_all_users', JSON.stringify(allUsers));
+
+      // Sync username (and address fields) to Firestore so other users can see it
+      try {
+        await base44.entities.User.update(user.id, {
+          username:   username.trim(),
+          cep:        rawCep,
+          logradouro: logradouro.trim(),
+          bairro:     bairro.trim(),
+          cidade:     cidade.trim(),
+          estado:     estado.trim(),
+          numero:     numero.trim(),
+          observacao: observacao.trim(),
+        });
+      } catch (syncErr) {
+        console.warn('Firestore username sync failed:', syncErr);
+      }
 
       window.dispatchEvent(new Event('storage'));
       toast.success('Cadastro concluído!');
