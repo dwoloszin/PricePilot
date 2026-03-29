@@ -178,13 +178,27 @@ export default function Scanner() {
             const data = await response.json();
             if (data.status === 1 && data.product) {
               const p = data.product;
+              const n = p.nutriments || {};
               console.log(">>> SCANNER: API found product:", p.product_name);
               apiData = {
-                name: p.product_name || '',
-                brand: p.brands || '',
-                category: mapCategory(p.categories_tags?.[0]),
-                image_url: p.image_url || '',
-                barcode: barcode
+                name:        p.product_name || '',
+                brand:       p.brands || '',
+                category:    mapCategory(p.categories_tags?.[0]),
+                image_url:   p.image_url || '',
+                barcode,
+                // Nutritional info per 100g
+                ingredients:       p.ingredients_text || '',
+                serving_size:      p.serving_size || '',
+                nutriscore:        p.nutriscore_grade?.toUpperCase() || '',
+                nova_group:        p.nova_group ? String(p.nova_group) : '',
+                calories_100g:     n['energy-kcal_100g'] ?? null,
+                fat_100g:          n['fat_100g'] ?? null,
+                saturated_fat_100g: n['saturated-fat_100g'] ?? null,
+                carbs_100g:        n['carbohydrates_100g'] ?? null,
+                sugars_100g:       n['sugars_100g'] ?? null,
+                fiber_100g:        n['fiber_100g'] ?? null,
+                proteins_100g:     n['proteins_100g'] ?? null,
+                salt_100g:         n['salt_100g'] ?? null,
               };
             }
           }

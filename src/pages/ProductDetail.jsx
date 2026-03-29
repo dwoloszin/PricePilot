@@ -10,11 +10,11 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { 
-  ArrowLeft, 
-  Package, 
-  Plus, 
-  History, 
-  TrendingDown, 
+  ArrowLeft,
+  Package,
+  Plus,
+  History,
+  TrendingDown,
   TrendingUp,
   MapPin,
   Calendar,
@@ -25,7 +25,9 @@ import {
   ShoppingCart,
   PlusCircle,
   Clock,
-  Tag
+  Tag,
+  Flame,
+  Leaf
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -344,6 +346,77 @@ export default function ProductDetail() {
             {product.description && (
               <div className="pt-4 border-t border-slate-50">
                 <p className="text-slate-600 text-sm leading-relaxed">{product.description}</p>
+              </div>
+            )}
+
+            {/* Nutritional Info */}
+            {product.calories_100g != null && (
+              <div className="pt-4 border-t border-slate-50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Flame className="w-4 h-4 text-orange-400" />
+                    Nutrition per 100g
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    {product.nutriscore && (
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-md text-white ${
+                        { A:'bg-green-500', B:'bg-lime-500', C:'bg-yellow-400', D:'bg-orange-400', E:'bg-red-500' }[product.nutriscore] || 'bg-slate-400'
+                      }`}>
+                        Nutri-Score {product.nutriscore}
+                      </span>
+                    )}
+                    {product.nova_group && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                        NOVA {product.nova_group}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  {[
+                    { label: 'Calories', value: product.calories_100g, unit: 'kcal', color: 'bg-orange-50 text-orange-700' },
+                    { label: 'Carbs',    value: product.carbs_100g,    unit: 'g',    color: 'bg-blue-50 text-blue-700' },
+                    { label: 'Protein',  value: product.proteins_100g, unit: 'g',    color: 'bg-emerald-50 text-emerald-700' },
+                    { label: 'Fat',      value: product.fat_100g,      unit: 'g',    color: 'bg-yellow-50 text-yellow-700' },
+                  ].map(({ label, value, unit, color }) => value != null && (
+                    <div key={label} className={`rounded-xl p-2 ${color}`}>
+                      <p className="text-lg font-bold leading-none">{Math.round(value * 10) / 10}</p>
+                      <p className="text-[10px] font-medium opacity-70">{unit}</p>
+                      <p className="text-[10px] font-semibold mt-0.5">{label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {(product.sugars_100g != null || product.fiber_100g != null || product.salt_100g != null || product.saturated_fat_100g != null) && (
+                  <div className="space-y-1.5 text-xs text-slate-600">
+                    {[
+                      { label: 'Saturated fat', value: product.saturated_fat_100g },
+                      { label: 'Sugars',        value: product.sugars_100g },
+                      { label: 'Fiber',         value: product.fiber_100g },
+                      { label: 'Salt',          value: product.salt_100g },
+                    ].filter(r => r.value != null).map(({ label, value }) => (
+                      <div key={label} className="flex justify-between py-1 border-b border-slate-50">
+                        <span className="text-slate-500">{label}</span>
+                        <span className="font-semibold">{Math.round(value * 100) / 100}g</span>
+                      </div>
+                    ))}
+                    {product.serving_size && (
+                      <p className="text-slate-400 text-[10px] pt-1">Serving size: {product.serving_size}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Ingredients */}
+            {product.ingredients && (
+              <div className="pt-4 border-t border-slate-50">
+                <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-1.5 mb-2">
+                  <Leaf className="w-4 h-4 text-emerald-500" />
+                  Ingredients
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">{product.ingredients}</p>
               </div>
             )}
 

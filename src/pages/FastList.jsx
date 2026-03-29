@@ -156,10 +156,19 @@ export default function FastList() {
                   if (response.ok) {
                     const data = await response.json();
                     if (data.status === 1 && data.product) {
+                      const p = data.product;
+                      const n = p.nutriments || {};
                       newItems[i] = {
                         ...item,
-                        product_name: data.product.product_name || item.product_name,
-                        image_url: data.product.image_url || item.image_url,
+                        product_name:      p.product_name || item.product_name,
+                        image_url:         p.image_url || item.image_url,
+                        brand:             p.brands || item.brand || '',
+                        ingredients:       p.ingredients_text || '',
+                        nutriscore:        p.nutriscore_grade?.toUpperCase() || '',
+                        calories_100g:     n['energy-kcal_100g'] ?? null,
+                        proteins_100g:     n['proteins_100g'] ?? null,
+                        carbs_100g:        n['carbohydrates_100g'] ?? null,
+                        fat_100g:          n['fat_100g'] ?? null,
                         is_enriched: true
                       };
                       updated = true;
