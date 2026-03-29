@@ -32,3 +32,12 @@ dist-ssr
 *.sln
 *.sw?
 .claude
+README_LOCAL.md
+
+# EFI Bank certificates — NEVER commit these
+certificates/
+*.p12
+*.pem
+*.key
+*.pfx
+*.crt

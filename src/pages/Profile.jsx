@@ -2,12 +2,12 @@
 // Bem na Mosca — DARIO WOLOSZIN
 // https://github.com/dwoloszin
 // ──────────────────────────────────────────────────────────
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { 
+import {
   User,
   LogOut,
   Package,
@@ -18,7 +18,10 @@ import {
   Calendar,
   Edit2,
   Loader2,
-  BarChart3
+  BarChart3,
+  Crown,
+  Zap,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,18 +35,30 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import LoginPrompt from '@/components/ui/LoginPrompt';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import { useLanguage } from '@/lib/LanguageContext';
+import PixPaymentModal from '@/components/payment/PixPaymentModal';
+import { subscribeToSubscription, isSubscriptionActive, daysRemaining } from '@/api/subscriptionClient';
 
 export default function Profile() {
   const queryClient = useQueryClient();
   const { user, logout, isLoadingAuth } = useAuth();
   const { t } = useLanguage();
-  const [showEdit, setShowEdit] = useState(false);
-  const [editName, setEditName] = useState('');
+  const [showEdit, setShowEdit]       = useState(false);
+  const [editName, setEditName]       = useState('');
+  const [showPix, setShowPix]         = useState(false);
+  const [subscription, setSubscription] = useState(null);
 
   const userLoading = isLoadingAuth;
+
+  // Real-time subscription listener
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = subscribeToSubscription(user.id, setSubscription);
+    return () => unsub();
+  }, [user?.id]);
 
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
@@ -256,6 +271,75 @@ export default function Profile() {
           <LanguageSwitcher />
         </div>
       </div>
+
+      {/* Subscription Card */}
+      {(() => {
+        const active  = isSubscriptionActive(subscription);
+        const days    = daysRemaining(subscription);
+        const expires = subscription?.expiresAt;
+        return (
+          <div className={`rounded-2xl p-5 border ${active ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200' : 'bg-white border-slate-100'}`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${active ? 'bg-emerald-100' : 'bg-slate-100'}`}>
+                  <Crown className={`w-5 h-5 ${active ? 'text-emerald-600' : 'text-slate-400'}`} />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-800">Assinatura</p>
+                  <p className="text-xs text-slate-500">R$ 9,90 / mês</p>
+                </div>
+              </div>
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                {active ? 'Ativa' : 'Inativa'}
+              </span>
+            </div>
+
+            {active && expires && (
+              <div className="mb-3 space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">Expira em</span>
+                  <span className="font-semibold text-slate-700">
+                    {format(expires, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">Dias restantes</span>
+                  <span className={`font-bold ${days <= 5 ? 'text-red-500' : 'text-emerald-600'}`}>
+                    {days} {days === 1 ? 'dia' : 'dias'}
+                  </span>
+                </div>
+                {days <= 5 && (
+                  <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 rounded-lg p-2 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    Sua assinatura vence em breve. Renove para não perder o acesso.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!active && (
+              <p className="text-sm text-slate-500 mb-3">
+                Assine para desbloquear todos os recursos premium.
+              </p>
+            )}
+
+            <Button
+              onClick={() => setShowPix(true)}
+              className={`w-full h-11 rounded-xl font-semibold ${active ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              {active ? 'Renovar assinatura' : 'Assinar agora — R$ 9,90'}
+            </Button>
+          </div>
+        );
+      })()}
+
+      {/* PIX Payment Modal */}
+      <PixPaymentModal
+        open={showPix}
+        onOpenChange={setShowPix}
+        onPaymentConfirmed={() => toast.success('Assinatura ativada! Bem-vindo ao premium 🎉')}
+      />
 
       {/* Logout Button */}
       <Button
